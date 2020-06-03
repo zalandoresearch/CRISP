@@ -1,0 +1,26 @@
+.idea
+*.csv
+.vscode/settings.json
+*.pyc
+code/experiments/.ipynb_checkpoints/Gibbs sampling test-checkpoint.ipynb
+code/.DS_Store
+.vscode/launch.json
+.vscode/tasks.json
+.DS_Store
+code/infer
+code/Makefile
+CMakeFiles
+CMakeCache.txt
+cmake_install.cmake
+*.aux
+*.bbl
+*.blg
+*.dvi
+*.log
+*.out
+*.synctex.gz
+*.xcp
+*.so
+code/experiments/**/results/[a-z,A-Z,0-9]*
+code/experiments/**/_--*
+*.part
