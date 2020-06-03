@@ -26,6 +26,3 @@ If you want to test the code, just run
 python -m test_gibbs_sampler
 ```
 
-## Python COVID C++ Library Build
-
-```g++ -O3 -std=c++11 -I/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.7/Headers/ -L/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.7/lib/ -l python3.7 -m64 -shared -o covid.so python_bindings.cpp```
