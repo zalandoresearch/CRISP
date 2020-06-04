@@ -2,11 +2,16 @@
 
 <details><summary>Table of Contents</summary><p>
 
-* [What is CRISP](#what-is-CRISP)
-* [Build Instructions](#build-instructions)
-* [Contributing](#contributing)
-* [Citing CRISP](#citing-CRISP)
-* [License](#license)
+- [CRISP](#crisp)
+  - [What is CRISP](#what-is-crisp)
+  - [Build Instructions](#build-instructions)
+    - [Tool Setup](#tool-setup)
+    - [Dependencies](#dependencies)
+    - [Compilation](#compilation)
+    - [Test](#test)
+  - [Contributing](#contributing)
+  - [Citing CRISP](#citing-crisp)
+  - [License](#license)
 </p></details><p></p>
 
 
@@ -16,27 +21,34 @@ CRISP (*C*OVID-19 *RI*sk *S*core *P*rediction) is a probabilistic graphical mode
 
 ## Build Instructions
 
+### Tool Setup
 This code uses CMake. If you have homebrew installed, try first
-
 ```brew install cmake```
 
-Also, we are using PyBind submodules. In order to get these dependencies installed, run
+Otherwise, see if you can download a pre-compiled binary at https://cmake.org/download/.
+
+### Dependencies 
+We are using PyBind submodules. In order to get these dependencies installed, run
 
 ```git submodule update --init --recursive```
 
-Then, the following code work
+### Compilation
+In order to compile the C++ Gibbs sampler as a Python library, run the following step
 
 ```
-cmake CMakeLists.txt -DCMAKE_BUILD_TYPE=Release
+cd code
+cmake CMakeLists.txt
 make clean
 make
 ```
 
-If you want to test the code, just run
+### Test
+If you want to test the code, just run the following command in the ``code`` folder
 
 ```
-python -m test_gibbs_sampler
+python3 test_gibbs_sampler.py
 ```
+You can also experiment with the option ``--setup 1`` or ``--setup 2``. 
 
 ## Contributing
 
