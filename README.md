@@ -1,8 +1,5 @@
 # CRISP
 
-[![GitHub stars](https://img.shields.io/github/stars/zalandoresearch/fashion-mnist.svg?style=flat&label=Star)](https://github.com/zalandoresearch/CRISP/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
 <details><summary>Table of Contents</summary><p>
 
 * [What is CRISP](#what-is-CRISP)
