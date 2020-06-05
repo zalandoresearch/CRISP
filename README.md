@@ -61,14 +61,14 @@ If you use CRISP in a scientific publication, we would appreciate references to 
 
 Biblatex entry:
 ```latex
-@online{xiao2017/online,
+@online{crisp2020,
   author       = {Ralf Herbrich and Rajeev Rastogi and Roland Vollgraf},
-  title        = {CRISP: },
-  date         = {2020-06-04},
+  title        = {CRISP: A Probabilistic Model for Individual-Level COVID-19 Infection Risk Estimation Based on Contact Data},
+  date         = {2020-06-05},
   year         = {2020},
   eprintclass  = {cs.LG},
   eprinttype   = {arXiv},
-  eprint       = {cs.LG/1708.07747},
+  eprint       = {cs.LG/2006.XXXXX},
 }
 ```
 
