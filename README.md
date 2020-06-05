@@ -57,7 +57,7 @@ Thanks for your interest in contributing! There are many ways to get involved; s
 ## Citing CRISP
 If you use CRISP in a scientific publication, we would appreciate references to the following paper:
 
-**title. Ralf Herbrich, Rajeev Rastogi, Roland Vollgraf. [arXiv:1708.07747](http://arxiv.org/abs/1708.07747)**
+**[CRISP: A Probabilistic Model for Individual-Level COVID-19 Infection Risk Estimation Based on Contact Data. Ralf Herbrich, Rajeev Rastogi, Roland Vollgraf.](https://github.com/zalandoresearch/CRISP/raw/master/crisp.pdf)**
 
 Biblatex entry:
 ```latex
