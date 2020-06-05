@@ -55,22 +55,11 @@ You can also experiment with the option ``--setup 1`` or ``--setup 2``.
 Thanks for your interest in contributing! There are many ways to get involved; start with our [contributor guidelines](/CONTRIBUTING.md) and then check these [open issues](https://github.com/zalandoresearch/CRISP/issues) for specific tasks.
 
 ## Citing CRISP
-If you use CRISP in a scientific publication, we would appreciate references to the following paper:
+If you use are interested to read the details about the CRISP model, please have a look at the following paper:
 
 **[CRISP: A Probabilistic Model for Individual-Level COVID-19 Infection Risk Estimation Based on Contact Data. Ralf Herbrich, Rajeev Rastogi, Roland Vollgraf.](https://github.com/zalandoresearch/CRISP/raw/master/crisp.pdf)**
 
-Biblatex entry:
-```latex
-@online{crisp2020,
-  author       = {Ralf Herbrich and Rajeev Rastogi and Roland Vollgraf},
-  title        = {CRISP: A Probabilistic Model for Individual-Level COVID-19 Infection Risk Estimation Based on Contact Data},
-  date         = {2020-06-05},
-  year         = {2020},
-  eprintclass  = {cs.LG},
-  eprinttype   = {arXiv},
-  eprint       = {cs.LG/2006.XXXXX},
-}
-```
+In the coming days, we will make this paper available on https://arxiv.org/.
 
 ## License
 
