@@ -8,8 +8,8 @@ R0 = 2.5 # 5
 POLICY_START = 30 # 60 
 IT = 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 SEED = 42 # 4711 0815 666 12345 13156 80808 1000 0 1024 # 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
-PEIT = 0.5
-PSRT = 0.6 0.7 0.8
+PEIT = 0.2 0.3 0.4 0.5
+PSRT = 0.9
 QDAYS = 2 7 14 21
 PDAYS = 7
 
@@ -53,11 +53,10 @@ BUILD_TARGETS_SCORE:=$(foreach SD,$(SEED), $(subst {SD},$(SD),$(BUILD_TARGETS_SC
 # BUILD_TARGETS:=$(BUILD_TARGETS_NO) $(BUILD_TARGETS_LOCKDOWN) $(BUILD_TARGETS_SYMPTOM) $(BUILD_TARGETS_CONTACT) 
 BUILD_TARGETS:=$(BUILD_TARGETS_NO) $(BUILD_TARGETS_LOCKDOWN) $(BUILD_TARGETS_SYMPTOM) $(BUILD_TARGETS_CONTACT) $(BUILD_TARGETS_SCORE)
 
-# uncomment this one when not running on SLURM
-SRUN := srun -p cpu -c 1 --mem=8GB
-# SRUN := 
+# uncomment this one when running on SLURM
+# SRUN := srun -p cpu -c 1 --mem=8GB
 
-CMD := python -u ../../../../exp_test_quarantine.py
+CMD := python -u ../../exp_test_quarantine.py
 
 RUN_EXP = run_exp() { \
 	mkdir results/$$1; \

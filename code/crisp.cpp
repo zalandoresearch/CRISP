@@ -231,12 +231,74 @@ std::ostream &operator<<(std::ostream &os, InfectionTrace const &it) {
     return os << "(" << it.getT0() << "," << it.getDE() << "," << it.getDI() <<")";
 }
 
+// an infection status per individual that allows for Markovian state transitions
+// it comprises probabilities of the states
+// {S,E_1, E_2, ... E_{dE_max}, I_1, I_2,..., I_{dI_max},R}
+struct IndividualInfectionStatus {
+
+    double _pS;
+    vector<double> _pE;
+    vector<double> _pI;
+    double _pR;
+
+    IndividualInfectionStatus( bool patientZero, int maxE, int maxI) :
+        _pE(maxE+1, 0.0),
+        _pI(maxI+1, 0.0)
+        {
+            if( patientZero) {
+                _pS = 0;
+                _pE[1] = 1.0;
+            }
+            else {
+                _pS = 1.0;
+            }
+        }
+
+    double pI_total() const {
+        double total = 0.0;
+        for( auto p: _pI) total += p;
+        return total;
+    }
+
+    // compute the sum of all probabilities, should be 1.0 usually
+    double sanityCheck() const {
+        double total = _pS + _pR;
+        for( auto p: _pE) total += p;
+        for( auto p: _pI) total += p;
+        return total;
+    }
+    // re-normalize all probabilities to sum to 1.0
+    double normalize() {
+        double total = sanityCheck();
+        if (total !=1) {
+            _pS /= total;
+            for( auto &pE: _pE) pE /= total;
+            for( auto &pI: _pI) pI /= total;
+            _pR /= total;
+        }
+        return total;
+    }
+
+    // produce a marginal vector of [P({S}}, P({E_1,...E_{dE_max}), P(I_1,...I_{d_max}), P({R})]
+    vector<double> summarize() const {
+        double pE_total = 0.0;
+        for( auto &pE: _pE) pE_total += pE;
+
+        double pI_total = 0.0;
+        for( auto &pI: _pI) pI_total += pI;
+
+        return vector<double>( {_pS, pE_total, pI_total, _pR});
+    }
+};
+
 
 // This class captures the infection status of an entire population (variable Z in the paper)
 class PopulationInfectionStatus {
     private:
         // Infection trace for every single individual in the simulation
         vector<InfectionTrace> _individualTrace;
+
+        vector<IndividualInfectionStatus> _infectionStatus;
 
         // Total number of individuals
         int _noIndividuals;
@@ -280,6 +342,9 @@ class PopulationInfectionStatus {
         // cached value of p1
         double _p1;
 
+        // cached value of log(1-_p0)
+        double _log1MinusP0;
+
         // cached value of log(1-_p1)
         double _log1MinusP1;
 
@@ -300,6 +365,11 @@ class PopulationInfectionStatus {
 
         //  list of tuples (infection trace, probability) of all possible infection traces
         vector< tuple< InfectionTrace, double> > _logPrior;
+
+
+        vector<double> _log_g;
+        vector<double> _log_h;
+
 
         // compute the list of all possible infection traces (t0, dE, dI) together with their a priori probabilities
         void initPrior() {
@@ -498,6 +568,74 @@ class PopulationInfectionStatus {
                 }
                 _individualTrace[u] = zu;
             }
+
+
+            // 5. do forward inference
+
+
+            vector<IndividualInfectionStatus> newInfectionStatus(
+                                                        _noIndividuals,
+                                                        IndividualInfectionStatus( false,
+                                                                                   _qE.getMaxOutcomeValue(),
+                                                                                   _qI.getMaxOutcomeValue()) );
+            for(int u=0; u<_noIndividuals; ++u) {
+
+                const IndividualInfectionStatus &is_old = _infectionStatus[u];
+                IndividualInfectionStatus &is_new = newInfectionStatus[u];
+
+                // compute log(f) with
+                double log_f = _log1MinusP0;
+                for(auto pc: _pastContact(u,_noTimeSteps)) {
+                    int v = get<0>(pc);
+                    int x = get<1>(pc);
+                    double pI = _infectionStatus[v].pI_total();
+                    log_f += log( pI*pow(1.0-_p1, x) +(1.0-pI));
+                }
+
+                // update the new infection status of individual u with f, g, and h
+                is_new._pS = is_old._pS * exp(log_f);
+                is_new._pE[1] = is_old._pS * (1.0 -exp(log_f));
+                for( int dE=2; dE<_log_g.size(); ++dE) {
+                    is_new._pE[dE] = is_old._pE[dE-1] * (1.0 - exp(_log_g[dE-1]));
+                }
+                is_new._pI[1]=0;
+                for( int dE=1; dE<_log_g.size(); ++dE) {
+                    is_new._pI[1] += is_old._pE[dE] * exp(_log_g[dE]);
+                }
+                for( int dI=2; dI<_log_h.size(); ++dI) {
+                    is_new._pI[dI] = is_old._pI[dI-1] * (1.0 - exp(_log_h[dI-1]));
+                }
+                is_new._pR=0;
+                for( int dI=1; dI<_log_h.size(); ++dI) {
+                    is_new._pR += is_old._pI[dI] * exp(_log_h[dI]);
+                }
+                is_new._pR += is_old._pR;
+
+                // integrate tests
+                for( auto test: _outcomes[u]) {
+                    if (test.getTime() == _noTimeSteps-1) {
+                        switch( test.getOutcome()) {
+                        case Negative:
+                            is_new._pS *= 1.0-_beta;
+                            for( auto &pE: is_new._pE)  pE *= 1.0-_beta;
+                            for( auto &pI: is_new._pI)  pI *= _beta;
+                            is_new._pR *= 1.0-_beta;
+                            break;
+
+                        case Positive:
+                            is_new._pS *= _beta;
+                            for( auto &pE: is_new._pE)  pE *= _beta;
+                            for( auto &pI: is_new._pI)  pI *= 1.0-_alpha;
+                            is_new._pR *= _beta;
+                            break;
+                        }
+                        // tests spoil the normalization of the infection status, so re-normalize
+                        is_new.normalize();
+                    }
+                }
+            }
+            // update the old with the new for the whole population
+            _infectionStatus = newInfectionStatus;
         }
 
 
@@ -509,6 +647,7 @@ class PopulationInfectionStatus {
                         double alpha, double beta, double p0, double p1,
                         bool patientZero=false) :
             _individualTrace(S, InfectionTrace(1,0,0)),
+            _infectionStatus( S, IndividualInfectionStatus( /*patientZero*/false, qE.getMaxOutcomeValue(), qI.getMaxOutcomeValue() )),
             _noIndividuals(S),
             _noTimeSteps(1),
             _gen(_rd()),
@@ -521,13 +660,20 @@ class PopulationInfectionStatus {
             _beta(beta),
             _p0(p0),
             _p1(p1),
+            _log1MinusP0(log(1.0-p0)),
             _log1MinusP1(log(1.0-p1)),
             _minExposure(qE.getMinOutcomeValue()),
             _minInfectious(qI.getMinOutcomeValue()),
             _maxExposure(qE.getMaxOutcomeValue()),
             _maxInfectious(qI.getMaxOutcomeValue()),
-            _infectiousContactCounts(_noIndividuals) {
+            _infectiousContactCounts(_noIndividuals),
+             _log_g( _qE.getMaxOutcomeValue()+1, 0.0),
+             _log_h( _qI.getMaxOutcomeValue()+1, 0.0)
+             {
 
+            if( patientZero) {
+                _infectionStatus[0] = IndividualInfectionStatus( /*patientZero*/true, qE.getMaxOutcomeValue(), qI.getMaxOutcomeValue() );
+            }
             uniform_real_distribution<> rng(0.0, 1.0);
             for(int u=0; u<_noIndividuals; ++u) {
                 if(u==0 && patientZero) {
@@ -542,6 +688,16 @@ class PopulationInfectionStatus {
                 _advance(contacts, outcomes, /*ignore_tests =*/ true, /*updatePrior =*/ false);
             }
             initPrior();
+
+
+            // initialize lookup tables for log(g) and log(h)
+            for( int dE=0; dE<_log_g.size(); ++dE) {
+                _log_g[dE] = min(_qE.getLogP(dE)-_qE.getLogPTail(dE), 0.0);
+            }
+            for( int dI=0; dI<_log_h.size(); ++dI) {
+                _log_h[dI] = min(_qI.getLogP(dI)-_qI.getLogPTail(dI), 0.0);
+            }
+
         }
 
         PopulationInfectionStatus( const PopulationInfectionStatus &other) :
@@ -563,7 +719,10 @@ class PopulationInfectionStatus {
             _minInfectious(other._minInfectious),
             _maxExposure(other._maxExposure),
             _maxInfectious(other._maxInfectious),
-            _infectiousContactCounts(other._infectiousContactCounts) {
+            _infectiousContactCounts(other._infectiousContactCounts),
+             _log_g( other._log_g),
+             _log_h( other._log_h)
+             {
 
                     initPrior();
         }
@@ -745,31 +904,14 @@ class PopulationInfectionStatus {
             return py::array_t<int>({_noIndividuals,3}, res);
         }
 
-        py::array_t<double> getInfectionStatus(int N=0, int burnIn=0, int skip=0) {
-            _precisionWarning1Issued = false;
 
+        py::array_t<double> getInfectionStatus( int, int, int /*for compatibility issuses */) const {
             double* P_z_uT = new double[_noIndividuals*4]();
-
-            if(N>0) {
-                for(int n=0; n<burnIn; ++n) { for(int u=0; u < _noIndividuals; ++u) { gibbsSampleU(u); } }
-
-                for(int n=0; n<N; ++n) {
-                    for(int s=0; s<skip; ++s) { for(int u=0; u< _noIndividuals; ++u) { gibbsSampleU(u); } }
-                    for(int u=0; u< _noIndividuals; ++u) {
-                        gibbsSampleU(u);
-                        P_z_uT[u*4 + (int)(_individualTrace[u][_noTimeSteps-1])] += 1;
-                    }
-                }
-                for(int i=0; i<_noIndividuals*4; ++i) {
-                    P_z_uT[i] /= N;
-                }
+            for(int u=0; u< _noIndividuals; ++u) {
+                auto p = _infectionStatus[u].summarize();
+                for( auto i: {0,1,2,3} )
+                    P_z_uT[u*4 + i] = p[i];
             }
-            else {
-                 for(int u=0; u< _noIndividuals; ++u) {
-                        P_z_uT[u*4 + (int)(_individualTrace[u][_noTimeSteps-1])] = 1;
-                 }
-            }
-
             return(py::array_t<double>({_noIndividuals,4}, P_z_uT));
         }
 

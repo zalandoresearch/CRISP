@@ -2,7 +2,11 @@ import numpy as np
 from math import exp, log
 from enum import Enum
 from matplotlib.pyplot import *
+
+import sys
+sys.path.append('../../../..')
 from crisp import Distribution, PopulationInfectionStatus
+
 import itertools
 import argparse
 
