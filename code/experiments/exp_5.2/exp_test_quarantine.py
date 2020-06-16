@@ -5,6 +5,7 @@ from matplotlib.pyplot import *
 from crisp import Distribution, PopulationInfectionStatus
 import itertools
 import argparse
+import csv
 
 
 class InfectionState(Enum):
@@ -99,12 +100,13 @@ class Contacts():
         return [(u,v,t,x) for (u,v,t,x) in self.contacts[t] if not(u in quarantined_individuals) and not(v in quarantined_individuals)] 
 
 class PolicyEvaluator():
-    def __init__(self, S, T, qE, qI, alpha, beta, p0, p1, contacts, p_symptomatic = 0.5, policy_start = 30):
+    def __init__(self, S, T, qE, qI, alpha, beta, p0, p1, contacts, p_symptomatic = 0.5, policy_start = 30, write_world = False):
         self.crisp = CRISP(S, T, qE, qI, alpha, beta, p0, p1, p_symptomatic)
         self.S = S                                              # Total number of individuals
         self.T = T                                              # Total number of time steps
         self.contacts = contacts                                # A fixed contact generator
         self.policy_start = policy_start                        # The day that the testing & quarantine policy starts
+        self.write_world = write_world                          # Stores whether or not the world state is written to disc
         self.quarantine_stats = np.array([[0] * 4] * T)         # Stores the statistics over the infection state of quarantined people each day
         self.test_stats = np.array([[0] * 2] * T)               # Stores the total number of tests and the total number of positive test outcomes
 
@@ -123,6 +125,13 @@ class PolicyEvaluator():
     # Advances the infection score model based on one new contact matrix, test outcomes and people with symptom onset
     def advance_infection_score_model(self, new_contacts, new_test_outcomes, individuals_with_symptom_onset):
         raise NotImplementedError
+
+    # Writes a list as a CSV file
+    def write_csv_file(self, l, filename):
+        if (self.write_world):
+            with open(filename, "w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerows(l)
 
     # Samples one entire infection trace for every individual
     def evaluate(self):
@@ -153,12 +162,14 @@ class PolicyEvaluator():
 
             # ... (4) compute the new contacts based on who is in quarantine
             today_contacts = self.contacts.get_contacts(t, quarantined_individuals)
+            self.write_csv_file(today_contacts, "contacts{}.csv".format(t))
 
             # ... (5) advance the world model by one step based on the new contacts
             individuals_with_symptom_onset = self.crisp.advance(today_contacts)
 
             # ... (6) compute the test outcomes of the test candidates based on the advanced world model
             today_test_outcomes = self.crisp.sample_test_outcomes(test_candidates)
+            self.write_csv_file(today_test_outcomes, "test{}.csv".format(t))
 
             # if (t+1 >= self.policy_start):
             # ... (7) and finally advance the infection score computation
@@ -391,7 +402,7 @@ def argument_parser() :
     # Create the parser
     my_parser = argparse.ArgumentParser(description='Simulates testing and quarantining policies for COVID-19')
     my_parser.add_argument('--S',               type=int,  required=False, default=1000,   help="The total number of individuals")
-    my_parser.add_argument('--T',               type=int,  required=False, default=40,     help="The total number of time steps")
+    my_parser.add_argument('--T',               type=int,  required=False, default=150,    help="The total number of time steps")
     my_parser.add_argument('--p0',              type=float,required=False, default=1e-4,   help="The probability of infection without contacts")
     my_parser.add_argument('--p1',              type=float,required=False, default=0.025,  help="The probability of infection of a contact")
     my_parser.add_argument('--alpha',           type=float,required=False, default=0.001,  help="The false negative rate of test I-test")
@@ -406,6 +417,7 @@ def argument_parser() :
     my_parser.add_argument('--seed',            type=int,  required=False, default=42,     help="The random seed for contacts generation")
     my_parser.add_argument('--iteration',       type=int,  required=False, default=0,      help="An iteration counter (will be ignored but allows to run for the same random seed for contacts generation)")
     my_parser.add_argument('--interactive',     choices=['on', 'off'], default='on',       help="Run the policy evaluation interactively or with file output")
+    my_parser.add_argument('--save-world',      choices=['on', 'off'], default='off',      help="Save the world state to files for each time-step")
     my_parser.add_argument('--policy',          choices=['no','lockdown','symptom','contact','score'], default='contact', help="The policy to be evaluated")
 
     return my_parser
@@ -424,6 +436,7 @@ if __name__ == "__main__":
     R0 = args.R0
     policy_start = args.policy_start
     test_capacity = args.test_capacity
+    write_world = (args.save_world == 'on')
 
     # Initialize the random seed
     np.random.seed(args.seed)
@@ -448,19 +461,19 @@ if __name__ == "__main__":
 
     contacts = Contacts(S=S, T=T, qE=qEVec, qI=qIVec, p1=p1, R_0 = R0)
     if (args.policy=='no'):
-        policy = NoPolicy(S=S, T=T, qE=qEVec, qI=qIVec, alpha=alpha, beta=beta, p0=p0, p1=p1, policy_start=policy_start, contacts=contacts)
+        policy = NoPolicy(S=S, T=T, qE=qEVec, qI=qIVec, alpha=alpha, beta=beta, p0=p0, p1=p1, policy_start=policy_start, contacts=contacts, write_world=write_world)
         fig_title = 'Evaluation of No Policy'
     elif (args.policy=='lockdown'):
-        policy = LockdownPolicy(S=S, T=T, qE=qEVec, qI=qIVec, alpha=alpha, beta=beta, p0=p0, p1=p1, policy_start=policy_start, contacts=contacts)
+        policy = LockdownPolicy(S=S, T=T, qE=qEVec, qI=qIVec, alpha=alpha, beta=beta, p0=p0, p1=p1, policy_start=policy_start, contacts=contacts, write_world=write_world)
         fig_title = 'Evaluation of Lockdown Policy'
     elif (args.policy=='symptom'):
-        policy = SymptomPolicy(S=S, T=T, qE=qEVec, qI=qIVec, alpha=alpha, beta=beta, p0=p0, p1=p1, policy_start=policy_start, contacts=contacts, test_capacity=test_capacity, quarantine_days=args.qDays)
+        policy = SymptomPolicy(S=S, T=T, qE=qEVec, qI=qIVec, alpha=alpha, beta=beta, p0=p0, p1=p1, policy_start=policy_start, contacts=contacts, test_capacity=test_capacity, quarantine_days=args.qDays, write_world=write_world)
         fig_title = 'Evaluation of Symptom Policy'
     elif (args.policy=='contact'):
-        policy = ContactTracingPolicy(S=S, T=T, qE=qEVec, qI=qIVec, alpha=alpha, beta=beta, p0=p0, p1=p1, policy_start=policy_start, contacts=contacts, test_capacity=test_capacity, quarantine_days=args.qDays, past_days=args.pDays)
+        policy = ContactTracingPolicy(S=S, T=T, qE=qEVec, qI=qIVec, alpha=alpha, beta=beta, p0=p0, p1=p1, policy_start=policy_start, contacts=contacts, test_capacity=test_capacity, quarantine_days=args.qDays, past_days=args.pDays, write_world=write_world)
         fig_title = 'Evaluation of Contact Tracing Policy'
     elif (args.policy=='score'):
-        policy = GibbsScoringPolicy(S=S, T=T, qE=qEVec, qI=qIVec, alpha=alpha, beta=beta, p0=p0, p1=p1, policy_start=policy_start, contacts=contacts, test_capacity=test_capacity, pEI_threshold=args.pEI_threshold, pSR_threshold=args.pSR_threshold)
+        policy = GibbsScoringPolicy(S=S, T=T, qE=qEVec, qI=qIVec, alpha=alpha, beta=beta, p0=p0, p1=p1, policy_start=policy_start, contacts=contacts, test_capacity=test_capacity, pEI_threshold=args.pEI_threshold, pSR_threshold=args.pSR_threshold, write_world=write_world)
         fig_title = 'Evaluation of Gibbs Score Policy'
     else:
         raise ValueError("unknown policy: {}".format(args.policy))
