@@ -17,8 +17,20 @@ protected:
 
     virtual double potential( vector<vector<any>::const_iterator>) = 0;
 
+    Factor( const vector<Node*> &nodes);
+
 public:
     vector<double> message_to( Node *);
+};
+
+
+class TableFactor: public Factor {
+    const vector<double> _tab;
+protected:
+    virtual double potential( vector<vector<any>::const_iterator>);
+
+public:
+    TableFactor( vector<Node*> &nodes, vector<double> tab);
 };
 
 
@@ -41,6 +53,15 @@ public:
 
     virtual double potential( vector<vector<any>::const_iterator>);
 
+};
+
+
+class SEIRInitFactor: public Factor {
+    bool _patient_zero;
+public:
+    SEIRInitFactor( SEIRNode &in, bool patient_zero = false);
+
+    virtual double potential( vector<vector<any>::const_iterator>);
 };
 
 #endif

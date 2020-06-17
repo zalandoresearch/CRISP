@@ -8,22 +8,33 @@
 
 using namespace std;
 
+template <class T>
+ostream& operator<<(ostream& os, const vector<T> &v) {
+    os << "(";
+    for(int i=0; i<v.size(); i++) os << v[i] << (i==v.size()-1 ? "": ", ") ;
+    os << ")";
+    return os;
+}
+    
+
 class Factor;
 
 class Node {
     friend class Factor;
 
-    vector<Factor*> _factors;   // list of associated factors
+    vector<Factor*> _factors;            // list of associated factors
 
 protected:
-    int _N;                     // length of message as discrete distribution
-    vector<double> _message;          // local message used for loopy belief propagation
-    vector<any> _state;
+    int _N;                              // length of message as discrete distribution
+    vector<vector<double>> _messages;    // local message used for loopy belief propagation
+    vector<any> _states;
 
 public:
     Node( int N);
-
+    int size() const {return _N;};
     void update();
+
+    const vector<double> message_to(const Factor *f = 0) const;
 };
 
 
@@ -37,7 +48,7 @@ public:
 
 class VirusLoadNode: public Node {
 public:
-    VirusLoadNode( int N);
+    VirusLoadNode( unsigned long N);
 };
 
 

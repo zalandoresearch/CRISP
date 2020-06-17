@@ -6,7 +6,69 @@
 using namespace std;
 
 
-int main() {
+
+vector<double> prob_vector( int N) {
+    auto v = vector<double>(N);
+    double sum = 0;
+    for( int i=0; i<N; i++) {
+        sum += v[i] = (double)rand() / RAND_MAX;
+    }
+    for( int i=0; i<N; v[i++] /= sum);
+    return v;
+}
+
+
+
+void loopy_test() {
+
+    int N = 3;
+    Node A(N), B(N), C(N), D(N);
+
+    auto tA = prob_vector(N);
+    vector<Node*> nA = {&A};
+    TableFactor fA( nA, tA );  
+
+    auto tB = prob_vector(N);
+    vector<Node*> nB = {&B};
+    TableFactor fB( nB, tB );  
+
+    vector<double> tABC;
+    for(int i=0; i<N*N; i++) {
+        auto v = prob_vector(N);
+        tABC.insert(tABC.end(),v.begin(),v.end());
+    }
+    vector<Node*> nABC = {&A, &B, &C};
+    TableFactor fABC( nABC, tABC );  
+
+    vector<double> tBD;
+    for(int i=0; i<N; i++) {
+        auto v = prob_vector(N);
+        tBD.insert(tBD.end(),v.begin(),v.end());
+    }
+    vector<Node*> nBD = {&B, &D};
+    TableFactor fBD( nBD, tBD );  
+
+    cout << std::fixed; 
+    cout.precision(5);
+
+    for( int i=0; i<10; i++) {
+        A.update();
+        B.update();
+        C.update();
+        D.update();
+        cout << "A:" << A.message_to() << endl;
+        cout << "B:" << B.message_to() << endl;
+        cout << "C:" << C.message_to() << endl;
+        cout << "D:" << D.message_to() << endl;
+        cout << endl;
+    }
+
+    cout << "P(A) = " << fA.message_to(&A) << endl;
+    cout << "P(B) = " << fB.message_to(&B) << endl;
+}
+
+
+void seir_state_test() {
     for( auto s: SEIRState::all_states( 10, 15))
         cout << s <<" ";
     cout << endl;
@@ -35,8 +97,14 @@ int main() {
     double p0 = 0.01;
     double p1 = 0.5;
 
-SEIRFactor f(qE, qI, p0, p1, node1, node2, load);
+    SEIRFactor f(qE, qI, p0, p1, node1, node2, load);
 
 
-f.message_to( &node1);
+    f.message_to( &node1);
+}
+
+
+int main() {
+    loopy_test();
+    return 0;
 }
