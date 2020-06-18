@@ -21,6 +21,19 @@ vector<double> prob_vector( int N) {
 
 void loopy_test() {
 
+/*
+small example of loopy BP, node D ends up with incorrect marginals
+                  .─.            
+                 ( B )           
+                 ╱`─'╲           
+       .─.      ╱     ╲      .─. 
+██────( A )────██     ██────( D )
+       `─'      ╲     ╱      `─' 
+                 ╲.─.╱           
+                 ( C )           
+                  `─'            
+
+*/
     int N = 3;
     Node A(N), B(N), C(N), D(N);
 
@@ -28,13 +41,9 @@ void loopy_test() {
     vector<Node*> nA = {&A};
     TableFactor fA( nA, tA );  
 
-    auto tB = prob_vector(N);
-    vector<Node*> nB = {&B};
-    TableFactor fB( nB, tB );  
-
     vector<double> tABC;
-    for(int i=0; i<N*N; i++) {
-        auto v = prob_vector(N);
+    for(int i=0; i<N; i++) {
+        auto v = prob_vector(N*N);
         tABC.insert(tABC.end(),v.begin(),v.end());
     }
     vector<Node*> nABC = {&A, &B, &C};
@@ -52,10 +61,11 @@ void loopy_test() {
     cout.precision(5);
 
     for( int i=0; i<5; i++) {
-        D.update();
-        C.update();
-        B.update();
         A.update();
+        B.update();
+        C.update();
+        D.update();
+        cout << "iteration " << i+1 << endl;
         cout << "A:" << normalize(A.message_to()) << endl;
         cout << "B:" << normalize(B.message_to()) << endl;
         cout << "C:" << normalize(C.message_to()) << endl;
@@ -64,27 +74,37 @@ void loopy_test() {
     }
 
     vector<double> PA = tA;
-    vector<double> PB = tB;
+    vector<double> PB(N,0.0);
     vector<double> PC(N, 0.0);
+    vector< vector<double>> PBC(N, vector<double>(N,0.0));
     auto it = tABC.begin();
     for(int i=0; i<N; i++) 
         for(int j=0; j<N; j++)
-            for(int k=0; k<N; k++) 
-                PC[k] += PA[i] * PB[j] *  (*it++);
+            for(int k=0; k<N; k++) {
+                PB[j] += PA[i] *(*it);
+                PC[k] += PA[i] *(*it);
+                PBC[j][k] += PA[i] *(*it);
+                it++;
+            }
+
     vector<double> PD(N, 0.0);
+    vector<double> PD_(N, 0.0);
     it = tBCD.begin();
     for(int i=0; i<N; i++) 
         for(int j=0; j<N; j++)
-            for(int k=0; k<N; k++) 
-                PD[k] += PB[i] * PC[j] *  (*it++);
-
-    
+            for(int k=0; k<N; k++) {
+                PD[k] += PBC[i][j] *(*it);
+                PD_[k] += PB[i]*PC[j] *(*it);
+                it++;
+            }
 
     cout << "P(A) = " << PA << endl;
     cout << "P(B) = " << PB << endl;
     cout << "P(C) = " << PC << endl;
-    cout << "P(D) = " << PD << endl;
+    cout << "P(D) = " << PD << "(true values, \\sum_{B,C} P(D|B,C) P(B,C) )" << endl;
+    cout << "P(D) = " << PD_ << "(factorizing, \\sum_{B,C} P(D|B,C) P(B) P(C) )" << endl;
 }
+
 
 
 void seir_state_test() {
