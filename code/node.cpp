@@ -5,6 +5,7 @@
 
 
 
+
 void operator *= (vector<double>& a, const vector<double>& b) {
 
     assert(a.size() == b.size());
@@ -13,6 +14,13 @@ void operator *= (vector<double>& a, const vector<double>& b) {
     } 
 }
 
+vector<double> normalize(const vector<double> &v_) {
+    double sum=0;
+    vector<double> v(v_);
+    for( auto x: v) sum+=x;
+    for( auto &x: v) x/=sum;
+    return v;
+}
 
 Node::Node( int N): _N(N),  _messages(), _states(N) {
     for( int i=0; i<N; i++)   

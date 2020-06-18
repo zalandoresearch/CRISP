@@ -1,12 +1,14 @@
+
 #include "factor.hpp"
 #include "node.hpp"
 #include "seir.hpp"
 
-#include <algorithm>
+#include <vector>
+#include <iostream>
 #include <cmath>
 #include <any>
-
-#include<iostream>
+#include <cstdint>
+#include <functional>
 
 using namespace std;
 
@@ -14,7 +16,10 @@ using namespace std;
 Factor::Factor( const vector<Node*> &nodes) : 
     _nodes(nodes) 
 {
-    for( auto n: _nodes) n->_factors.push_back(this);
+    for( auto n: _nodes) {
+        n->_factors.push_back(this);
+        n->_messages.push_back( vector<double>(n->_N, 1.0) );
+    }
 }
 
 vector<double> Factor::message_to( Node* n) {
@@ -23,14 +28,15 @@ vector<double> Factor::message_to( Node* n) {
     for( ; i_node<_nodes.size() && _nodes[i_node]!=n; i_node++);
     assert( i_node<_nodes.size()); // n needs to be in _nodes
 
-    vector< const vector<double>&> incoming_messages;
-    vector< const vector<std::any>&> incoming_states;
-    vector<vector<double>::const_iterator> msg_its;
+
+    vector< vector<double>>  incoming_messages;
+    vector< vector<std::any>> incoming_states;
+    vector< vector<double>::const_iterator>   msg_its;
     vector< vector<std::any>::const_iterator> state_its;
 
-    for( int i=0; i<_nodes.size(); i++ ) {
-        incoming_messages.push_back( _nodes[i]->message_to(this));
-        msg_its.push_back( incoming_messages[i].begin());
+    for( unsigned int i=0; i!=_nodes.size(); i++ ) {
+        incoming_messages.push_back(_nodes[i]->message_to(this));
+        msg_its.push_back(incoming_messages[i].begin());
 
         incoming_states.push_back(_nodes[i]->_states);
         state_its.push_back( incoming_states[i].begin());
@@ -42,18 +48,17 @@ vector<double> Factor::message_to( Node* n) {
     while( true) {
 
         double p = 1.0;
-        for( int i=0; i<_nodes.size(); i++) {
+        for(  int i=0; i<_nodes.size(); i++) {
             if( i!=i_node) {
                 p *= *(msg_its[i]);
             }
         }
         double upd = p * potential( state_its);
-        //cout << *(msg_it) << " " << upd << " "<< p << " " << endl;
+        // cout << *(out_msg_it) << " " << upd << " "<< p << " " << endl;
         *(out_msg_it) += upd;
 
         // generate the next state configuration
         for( int i=_nodes.size()-1; i>=0; i--) {
-            // from back to begin, increment stae and message iterators
             msg_its[i]++;
             state_its[i]++;
             if(_nodes[i] == n) out_msg_it++;
@@ -85,7 +90,7 @@ double TableFactor::potential( vector<vector<any>::const_iterator> state_its) {
     assert( state_its.size()== _nodes.size());
 
     int idx = 0;
-    for( int i=0; i<_nodes.size(); i++) {
+    for( unsigned int i=0; i<_nodes.size(); i++) {
         if( i>0) idx *= _nodes[i-1]->size();
         idx += std::any_cast<int>(*(state_its[i]));
         //cout << _nodes[i]->size() << " " <<  std::any_cast<int>(*(state_its[i])) << endl;
@@ -93,7 +98,6 @@ double TableFactor::potential( vector<vector<any>::const_iterator> state_its) {
     //cout << "ïdx: " << idx << endl;
     return _tab[idx];
 }
-
 
 
 SEIRFactor::SEIRFactor( const vector<double> &qE, const vector<double> &qI, 

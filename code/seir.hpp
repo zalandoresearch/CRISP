@@ -1,9 +1,7 @@
 #ifndef _SEIR_HPP
 #define _SEIR_HPP
 
-#include<variant>
-#include<vector>
-#include <iostream>
+#include <vector>
 using namespace std;
 
 class SEIRState {

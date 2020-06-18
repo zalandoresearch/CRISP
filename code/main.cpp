@@ -40,31 +40,50 @@ void loopy_test() {
     vector<Node*> nABC = {&A, &B, &C};
     TableFactor fABC( nABC, tABC );  
 
-    vector<double> tBD;
-    for(int i=0; i<N; i++) {
+    vector<double> tBCD;
+    for(int i=0; i<N*N; i++) {
         auto v = prob_vector(N);
-        tBD.insert(tBD.end(),v.begin(),v.end());
+        tBCD.insert(tBCD.end(),v.begin(),v.end());
     }
-    vector<Node*> nBD = {&B, &D};
-    TableFactor fBD( nBD, tBD );  
+    vector<Node*> nBCD = {&B, &C, &D};
+    TableFactor fBCD( nBCD, tBCD );  
 
     cout << std::fixed; 
     cout.precision(5);
 
-    for( int i=0; i<10; i++) {
-        A.update();
-        B.update();
-        C.update();
+    for( int i=0; i<5; i++) {
         D.update();
-        cout << "A:" << A.message_to() << endl;
-        cout << "B:" << B.message_to() << endl;
-        cout << "C:" << C.message_to() << endl;
-        cout << "D:" << D.message_to() << endl;
+        C.update();
+        B.update();
+        A.update();
+        cout << "A:" << normalize(A.message_to()) << endl;
+        cout << "B:" << normalize(B.message_to()) << endl;
+        cout << "C:" << normalize(C.message_to()) << endl;
+        cout << "D:" << normalize(D.message_to()) << endl;
         cout << endl;
     }
 
-    cout << "P(A) = " << fA.message_to(&A) << endl;
-    cout << "P(B) = " << fB.message_to(&B) << endl;
+    vector<double> PA = tA;
+    vector<double> PB = tB;
+    vector<double> PC(N, 0.0);
+    auto it = tABC.begin();
+    for(int i=0; i<N; i++) 
+        for(int j=0; j<N; j++)
+            for(int k=0; k<N; k++) 
+                PC[k] += PA[i] * PB[j] *  (*it++);
+    vector<double> PD(N, 0.0);
+    it = tBCD.begin();
+    for(int i=0; i<N; i++) 
+        for(int j=0; j<N; j++)
+            for(int k=0; k<N; k++) 
+                PD[k] += PB[i] * PC[j] *  (*it++);
+
+    
+
+    cout << "P(A) = " << PA << endl;
+    cout << "P(B) = " << PB << endl;
+    cout << "P(C) = " << PC << endl;
+    cout << "P(D) = " << PD << endl;
 }
 
 

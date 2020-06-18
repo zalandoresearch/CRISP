@@ -1,9 +1,10 @@
 #ifndef _NODE_HPP
 #define _NODE_HPP
 
+
 #include "seir.hpp"
 
-#include <vector>
+#include <iostream>
 #include <any>
 
 using namespace std;
@@ -11,11 +12,13 @@ using namespace std;
 template <class T>
 ostream& operator<<(ostream& os, const vector<T> &v) {
     os << "(";
-    for(int i=0; i<v.size(); i++) os << v[i] << (i==v.size()-1 ? "": ", ") ;
+    for(unsigned int i=0; i!=v.size(); i++) os << v[i] << (i==v.size()-1 ? "": ", ") ;
     os << ")";
     return os;
 }
-    
+
+vector<double> normalize(const vector<double> &v_);
+
 
 class Factor;
 
