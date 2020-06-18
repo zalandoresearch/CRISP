@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <iostream>
+#include <map>
 using namespace std;
 
 
@@ -58,5 +59,33 @@ ostream& operator<<(ostream& os, const SEIRState &s) {
         case SEIRState::I: os << "I(" << s.days() << ")"; break;
         case SEIRState::R: os << "R"; break;
     }
+    return os;
+}
+
+
+VirusLoad::VirusLoad() {
+    _Px[0] = 1.0;
+}
+
+void VirusLoad::add_source( double p, double x) {
+    
+    auto Px(_Px);
+
+    for( auto it = _Px.begin(); it!=_Px.end(); ++it)
+        it->second *= 1.0-p;
+
+    for(auto it = Px.begin(); it!=Px.end(); ++it )
+        _Px[it->first+x] += p * it->second;
+
+}
+
+ostream& operator<<(ostream& os, const VirusLoad &l) {
+    double p=0;
+    os << "[";
+    for( auto it=l.cbegin(); it!=l.cend(); ++it) {
+        os << "(" <<it->first <<": "<< it->second << ") ";
+        p += it->second;
+    }
+    os << "], p = " << p; 
     return os;
 }

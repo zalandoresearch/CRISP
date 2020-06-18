@@ -2,6 +2,7 @@
 #define _SEIR_HPP
 
 #include <vector>
+#include <map>
 using namespace std;
 
 class SEIRState {
@@ -26,5 +27,24 @@ private:
 };
 
 ostream& operator<<(ostream& os, const SEIRState &s);
+
+
+
+
+class VirusLoad {
+
+    map<double, double> _Px;
+
+public:
+    VirusLoad(); 
+    void add_source( double p, double x);
+
+    map<double, double>::const_iterator cbegin() const {return _Px.cbegin();};
+    map<double, double>::const_iterator cend() const {return _Px.cend();};
+
+};
+
+ostream& operator<<(ostream& os, const VirusLoad &l);
+
 
 #endif
