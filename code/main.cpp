@@ -135,8 +135,8 @@ void seir_state_test() {
                 0.03589255717, 0.03151878504, 0.02747963753, 0.02380914891, 0.02051758911,
                 0.01759822872, 0.01503287457, 0.0127962154, 0.01085910889, 0.009190974483,
                 0.007761463001, 0.006541562648, 0.005504277076};
-    double p0 = 0.01;
-    double p1 = 0.5;
+    double p0 = 0.02;
+    double p1 = 0.99;
 
 
     auto states = SEIRState::all_states( qE.size()-1, qI.size()-1);
@@ -144,14 +144,23 @@ void seir_state_test() {
         cout << s <<" ";
     cout << endl;
 
+    unsigned int S = 3;
     unsigned int T = 30;
-    vector<SEIRNode> nodes(T, SEIRNode(states));
+    vector<SEIRNode> nodes(S*T, SEIRNode(states));
 
     vector<unique_ptr<Factor>> factors;
-    factors.emplace_back(new SEIRInitFactor(nodes[0]));
-    for( unsigned int t=1; t<nodes.size(); t++) {
-        factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, nodes[t-1], nodes[t] ));
-    }
+    for( unsigned int s=0; s<S; s++)
+        factors.emplace_back(new SEIRInitFactor(nodes[s], s==0));
+
+    for( unsigned int t=1; t<T; t++) {
+        for( unsigned int s=0; s<S; s++) {
+            if      (t==17 && s==0) factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, nodes[S*(t-1)+s], nodes[S*t+s], vector<SEIRNode*>({&nodes[S*t+1]}) ));
+            else if (t==17 && s==1) factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, nodes[S*(t-1)+s], nodes[S*t+s], vector<SEIRNode*>({&nodes[S*t+0]}) ));
+            
+            else
+                factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, nodes[S*(t-1)+s], nodes[S*t+s] ));
+        }
+    }   
 
     // for( auto f = factors.begin(); f!=factors.end(); f++) {
     //     cerr << (*f)->_nodes.size() <<"(" << (*f) << "): ";
@@ -159,7 +168,7 @@ void seir_state_test() {
     //     cerr << endl;
     // }
     
-    for( int i=0; i<50; i++) {
+    for( int i=0; i<5; i++) {
         for( auto node = nodes.rbegin(); node !=nodes.rend(); ++node)
             node->update();
         for(auto &node: nodes) 
@@ -173,7 +182,7 @@ void seir_state_test() {
     // cout << *fac << endl;
     // cout << "sum="<< sum(*fac) << endl;
     for(auto &node: nodes) {
-        cout << basic_states(*node.message_to(), node._states) <<endl;
+        cout << normalize(basic_states(*node.message_to(), node._states)) <<endl;
     }
     //f.message_to( &node1);
 
@@ -201,3 +210,14 @@ int main() {
     seir_state_test();
     return 0;
 }
+
+
+
+
+/* ToDo:
+- strip inner loops of SEIRFactor::message_horizontally, and SEIRFactor::message_vertically 
+- make VirusLoad nicer, collecting the load distribution may need explicit scaling of the incoming factor
+- cleaup _states, make it global for all SEIRNodes
+- implement short_messages (aggregated over the four SEIR states )
+
+*/

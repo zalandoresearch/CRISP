@@ -48,7 +48,8 @@ class SEIRFactor : public Factor {
 
     static vector<Node *> init_helper(SEIRNode &in, SEIRNode &out, vector<SEIRNode *> contacts );
 
-    MessagePtr message_horizontally( bool factor);
+    MessagePtr message_horizontally( bool forward);
+    MessagePtr message_vertically( Node *n);
 
 public:
     SEIRFactor( const Message &qE, const Message &qI,

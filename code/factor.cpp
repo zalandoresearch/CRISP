@@ -129,7 +129,6 @@ const vector<double> SEIRFactor::init_pi( const vector<double> q) {
         sum += q[i]/scale;
         res[i] = q[i]/scale/sum;
     }
-    cerr << res << endl;
     return res;
 }
 
@@ -143,13 +142,16 @@ MessagePtr SEIRFactor::message_horizontally( bool forward) {
     for( size_t i=2; i<_nodes.size(); i++) {
         MessagePtr  contact_message = _nodes[i]->message_to(this);
         const vector<std::any>& contact_states = _nodes[i]->states();
-        double p = 0;
-        for( size_t i=0; i< contact_message->size(); i++) {
-            if( std::any_cast<SEIRState>(contact_states[i]).phase() == SEIRState::I) 
-                p += (*contact_message)[i];
-            load.add_source( p, 1.0);
-        }
-    }
+            double p = 0, p_tot = 0;
+            for( size_t i=0; i< contact_message->size(); i++) {
+                p_tot += (*contact_message)[i];
+                if( std::any_cast<SEIRState>(contact_states[i]).phase() == SEIRState::I) 
+                    p += (*contact_message)[i];
+            }
+            load.add_source( p/p_tot, 1.0);
+       }
+    //if(_nodes.size()>2)
+    //    cerr <<"load: " << load << endl;
 
     MessagePtr outgoing_message( new Message(_nodes[ forward ? 1 : 0]->size(), 0.0));
 
@@ -240,11 +242,119 @@ MessagePtr SEIRFactor::message_horizontally( bool forward) {
 }
 
 
+MessagePtr SEIRFactor::message_vertically( Node *n) {
+
+    VirusLoad load;
+    for( size_t i=2; i<_nodes.size(); i++) {
+        if( _nodes[i] != n) {
+
+            MessagePtr  contact_message = _nodes[i]->message_to(this);
+            const vector<std::any>& contact_states = _nodes[i]->states();
+            double p = 0, p_tot = 0;
+            for( size_t i=0; i< contact_message->size(); i++) {
+                p_tot += (*contact_message)[i];
+                if( std::any_cast<SEIRState>(contact_states[i]).phase() == SEIRState::I) 
+                    p += (*contact_message)[i];
+            }
+            load.add_source( p/p_tot, 1.0);
+        }
+    }
+    // if(_nodes.size()>2)
+    //     cerr <<"load: " << load << endl;
+
+    auto input_message = _nodes[0]->message_to(this);
+    auto output_message = _nodes[1]->message_to(this);
+
+    const vector<any>& input_states = _nodes[0]->_states;
+    const vector<any>& output_states = _nodes[1]->_states;
+
+
+    Message::const_iterator it_input_message;
+    Message::const_iterator it_output_message;
+
+
+    Message p_outgoing(2, 0.0);
+    for(int j=0; j<2; j++) {
+        it_input_message = input_message->begin();
+        for( auto it_input_states = input_states.cbegin(); it_input_states != input_states.cend(); ++it_input_states) 
+        {
+            auto in = std::any_cast<SEIRState>(*it_input_states);
+
+            it_output_message = output_message->begin();
+            for( auto it_output_states = output_states.cbegin(); it_output_states != output_states.cend(); ++it_output_states) 
+            {
+                auto out = std::any_cast<SEIRState>(*it_output_states);
+
+                const double& in_value = *it_input_message;
+                const double &out_value = *it_output_message;
+        
+                switch( in.phase() ) {
+                    case SEIRState::S: {
+                        double p_keep = 0.0;
+                        for( auto it_load = load.cbegin(); it_load != load.cend(); ++it_load) {
+                            p_keep += (it_load->second) * pow(1.0-_p1, it_load->first + (double) j); 
+                                                                                            // ^^^
+                                                                                            // here is the load increase by the contact node
+                        }
+                        p_keep *= (1.0-_p0);
+                        if( in.next(/*change = */ true)  == out) {
+                            p_outgoing[j] += out_value * in_value * (1.0 - p_keep);
+                            //cerr << in << "," << out << "=" << in_value <<", "<<out_value<<endl;
+                            }
+                        if( in.next(/*change = */ false) == out) {
+                            p_outgoing[j] += out_value * in_value * p_keep;
+                            //cerr << in << "," << out << "=" << in_value <<", "<<out_value<<endl;
+                            }
+                    } break;
+                    case SEIRState::E: {
+                        if( in.next(/*change = */ true)  == out) {
+                            p_outgoing[j] += out_value * in_value * _piE[in.days()];
+                            //cerr << in << "," << out << "=" << in_value <<", "<<out_value<<endl;
+                            }
+                        if( in.next(/*change = */ false) == out) {
+                            p_outgoing[j] += out_value * in_value * (1.0-_piE[in.days()]);
+                            //cerr << in << "," << out << "=" << in_value <<", "<<out_value<<endl;
+                            }
+
+                    } break;
+                    case SEIRState::I: {
+                        if( in.next(/*change = */ true)  == out) {
+                            p_outgoing[j] += out_value * in_value * _piI[in.days()];
+                            //cerr << in << "," << out << "=" << in_value <<", "<<out_value<<endl;
+                            }
+                        if( in.next(/*change = */ false) == out) {
+                            p_outgoing[j] += out_value * in_value * (1.0-_piI[in.days()]);
+                            //cerr << in << "," << out << "=" << in_value <<", "<<out_value<<endl;
+                            }
+                    } break;
+                    case SEIRState::R: {
+                        p_outgoing[j] += out_value * in_value * (out.phase()==SEIRState::R ? 1.0 : 0.0);
+                    } break;
+                }
+                ++it_output_message;
+            }
+            ++it_input_message;
+        }
+    cerr << p_outgoing << endl;
+    } 
+
+    p_outgoing = normalize(p_outgoing);
+    MessagePtr outgoing_message( new Message( n->_N));
+    for(int i=0; i<n->_N; i++) {
+        (*outgoing_message)[i] = (any_cast<SEIRState>(_nodes[0]->_states[i]).phase()==SEIRState::I ? p_outgoing[1] : p_outgoing[0]);
+    }
+
+    return outgoing_message;
+
+}
+
+
 MessagePtr SEIRFactor::message_to( Node *n) {
 
     if( n==_nodes[0]) return message_horizontally( /*forward =*/ false);
     if( n==_nodes[1]) return message_horizontally( /*forward =*/ true);
-    assert(false); // contact nodes not yet implemented
+    //return MessagePtr( new Message(53,1.0)); 
+    return message_vertically( n);
 }
 
 
