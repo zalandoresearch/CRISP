@@ -40,14 +40,14 @@ bool SEIRState::operator == (const SEIRState &other) const {
     return false;
 }
 
-vector<SEIRState> SEIRState::all_states( int dE, int dI) {
+SEIRStateSpace SEIRState::all_states( int dE, int dI) {
 
-     vector<SEIRState> res;
+    SEIRStateSpace res;
 
-     res.push_back( SEIRState(S));
-     for( int d=1; d<=dE; res.push_back( SEIRState(E,d++)));
-     for( int d=1; d<=dI; res.push_back( SEIRState(I,d++)));
-     res.push_back( SEIRState(R));
+    res.push_back( SEIRState(S));
+    for( int d=1; d<=dE; res.push_back( SEIRState(E,d++)));
+    for( int d=1; d<=dI; res.push_back( SEIRState(I,d++)));
+    res.push_back( SEIRState(R));
 
     return res;
 }
@@ -61,6 +61,20 @@ ostream& operator<<(ostream& os, const SEIRState &s) {
     }
     return os;
 }
+
+
+Message basic_states( const Message &message, const vector<any> &states) {
+
+    assert(message.size() == states.size());
+
+    Message out(4);
+
+    for( size_t i=0; i<message.size(); i++) {
+        out[any_cast<SEIRState>(states[i]).phase()] += message[i]; 
+    }
+    return out;
+}
+
 
 
 VirusLoad::VirusLoad() {

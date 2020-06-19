@@ -2,6 +2,8 @@
 #include "node.hpp"
 #include "factor.hpp"
 #include <iostream>
+#include <list>
+#include <memory>
 
 using namespace std;
 
@@ -17,6 +19,12 @@ vector<double> prob_vector( int N) {
     return v;
 }
 
+double sum( const Message &m) {
+    double res = 0.0;
+    for( auto i=m.begin(); i!=m.end();++i) res += *i;
+    return res;
+}
+ 
 
 
 void loopy_test() {
@@ -61,15 +69,15 @@ small example of loopy BP, node D ends up with incorrect marginals
     cout.precision(5);
 
     for( int i=0; i<5; i++) {
-        A.update();
         B.update();
-        C.update();
         D.update();
+        A.update();
+        C.update();
         cout << "iteration " << i+1 << endl;
-        cout << "A:" << normalize(A.message_to()) << endl;
-        cout << "B:" << normalize(B.message_to()) << endl;
-        cout << "C:" << normalize(C.message_to()) << endl;
-        cout << "D:" << normalize(D.message_to()) << endl;
+        cout << "A:" << normalize(*A.message_to()) << endl;
+        cout << "B:" << normalize(*B.message_to()) << endl;
+        cout << "C:" << normalize(*C.message_to()) << endl;
+        cout << "D:" << normalize(*D.message_to()) << endl;
         cout << endl;
     }
 
@@ -108,24 +116,18 @@ small example of loopy BP, node D ends up with incorrect marginals
 
 
 void seir_state_test() {
-    for( auto s: SEIRState::all_states( 10, 15))
-        cout << s <<" ";
-    cout << endl;
-
-
 
 
     SEIRNode node1( SEIRState::all_states( 10, 15)); 
     SEIRNode node2( SEIRState::all_states( 10, 15)); 
-    VirusLoadNode load(4);
 
-
-    vector<double> qE = {0.0000000000, 0.05908981283, 0.1656874653, 0.1819578343, 0.154807057,
+    // !!! t=0 based !!!
+    vector<double> qE = {0.0, 0.05908981283, 0.1656874653, 0.1819578343, 0.154807057,
                 0.1198776096, 0.08938884645, 0.06572939883, 0.04819654533,
                 0.03543733758, 0.02620080839, 0.01950646727, 0.01463254844,
                 0.0110616426, 0.008426626119};
 
-    vector<double> qI = {0.000000000000, 0.000000000000, 0.00000000000, 0.000000000000, 0.000000000000,
+    vector<double> qI = {0.0, 0.000000000000, 0.00000000000, 0.000000000000, 0.000000000000,
                 0.0001178655952, 0.0006658439543, 0.002319264193, 0.005825713197, 0.01160465163,
                 0.01949056696, 0.02877007836, 0.03842711373, 0.04743309657, 0.05496446107,
                 0.06050719418, 0.06386313651, 0.065094874, 0.06444537162, 0.06225794729,
@@ -136,14 +138,66 @@ void seir_state_test() {
     double p0 = 0.01;
     double p1 = 0.5;
 
-    SEIRFactor f(qE, qI, p0, p1, node1, node2, load);
 
+    auto states = SEIRState::all_states( qE.size()-1, qI.size()-1);
+    for( auto s: states)
+        cout << s <<" ";
+    cout << endl;
 
-    f.message_to( &node1);
+    unsigned int T = 30;
+    vector<SEIRNode> nodes(T, SEIRNode(states));
+
+    vector<unique_ptr<Factor>> factors;
+    factors.emplace_back(new SEIRInitFactor(nodes[0]));
+    for( unsigned int t=1; t<nodes.size(); t++) {
+        factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, nodes[t-1], nodes[t] ));
+    }
+
+    // for( auto f = factors.begin(); f!=factors.end(); f++) {
+    //     cerr << (*f)->_nodes.size() <<"(" << (*f) << "): ";
+    //     for( auto n: (*f)->_nodes) cerr << (void*)(n) << " "; 
+    //     cerr << endl;
+    // }
+    
+    for( int i=0; i<50; i++) {
+        for( auto node = nodes.rbegin(); node !=nodes.rend(); ++node)
+            node->update();
+        for(auto &node: nodes) 
+            node.update();
+    }
+
+    cout << std::fixed; 
+    cout.precision(3);
+
+    // auto fac = factors[0]->message_to(&nodes[1]);
+    // cout << *fac << endl;
+    // cout << "sum="<< sum(*fac) << endl;
+    for(auto &node: nodes) {
+        cout << basic_states(*node.message_to(), node._states) <<endl;
+    }
+    //f.message_to( &node1);
+
 }
 
 
+
+void virus_load_test() {
+
+    VirusLoad Px;
+    cout << Px << endl;
+
+    Px.add_source( 0.1, 1.0);
+    Px.add_source( 0.1, 1.1);
+    Px.add_source( 0.1, 0.95);
+    Px.add_source( 0.1, 1.7);
+    
+    cout << Px << endl;
+
+}
+
 int main() {
-    loopy_test();
+    //loopy_test();
+    //virus_load_test();
+    seir_state_test();
     return 0;
 }

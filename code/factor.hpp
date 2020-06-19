@@ -9,46 +9,57 @@ class Node;
 
 
 class Factor {
-protected:
+public:
     vector<Node*> _nodes;
 
     virtual double potential( vector<vector<any>::const_iterator>) = 0;
 
-    Factor( const vector<Node*> &nodes);
-
 public:
-    vector<double> message_to( Node *);
+    Factor( const vector<Node*> &nodes);
+    Factor( const Factor &other) :_nodes(other._nodes) {}
+    virtual ~Factor() {}
+
+    virtual MessagePtr message_to( Node *);
 };
 
 
 class TableFactor: public Factor {
-    const vector<double> _tab;
+    const Message _tab;
 protected:
     virtual double potential( vector<vector<any>::const_iterator>);
 
 public:
-    TableFactor( vector<Node*> &nodes, vector<double> tab);
+    TableFactor( vector<Node*> &nodes, Message tab);
+
 };
 
 
 
 class SEIRFactor : public Factor {
 
-    const vector<double>& _qE; 
-    const vector<double>& _qI;
-    const vector<double> _piE; 
-    const vector<double> _piI;
+    //const Message& _qE; 
+    //const Message& _qI;
+    const Message _piE; 
+    const Message _piI;
     double _p0;
     double _p1;
 
     static const vector<double> init_pi( const vector<double> q);
 
-public:
-    SEIRFactor( const vector<double> &qE, const vector<double> &qI,
-                double p0, double p1, 
-                SEIRNode &in, SEIRNode &out, VirusLoadNode &load);
+    static vector<Node *> init_helper(SEIRNode &in, SEIRNode &out, vector<SEIRNode *> contacts );
 
-    virtual double potential( vector<vector<any>::const_iterator>);
+    MessagePtr message_horizontally( bool factor);
+
+public:
+    SEIRFactor( const Message &qE, const Message &qI,
+                double p0, double p1, 
+                SEIRNode &in, SEIRNode &out, 
+                vector<SEIRNode *> contacts = vector<SEIRNode*>());
+    SEIRFactor( const SEIRFactor &other) : Factor(other), _piE( other._piE), _piI(other._piI), _p0(other._p0), _p1(other._p1) {}
+    virtual ~SEIRFactor(){}
+    MessagePtr message_to( Node *);
+
+    double potential( vector<vector<any>::const_iterator>);
 
 };
 
@@ -57,7 +68,7 @@ class SEIRInitFactor: public Factor {
     bool _patient_zero;
 public:
     SEIRInitFactor( SEIRNode &in, bool patient_zero = false);
-
+    virtual ~SEIRInitFactor(){}
     virtual double potential( vector<vector<any>::const_iterator>);
 };
 

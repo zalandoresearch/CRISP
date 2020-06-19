@@ -1,9 +1,20 @@
 #ifndef _SEIR_HPP
 #define _SEIR_HPP
 
+
 #include <vector>
 #include <map>
 using namespace std;
+
+class SEIRState;
+typedef vector<SEIRState> SEIRStateSpace;
+
+#include "node.hpp"
+
+
+
+
+
 
 class SEIRState {
 public:
@@ -18,7 +29,7 @@ public:
     Phase phase() const { return _p;}
     int days() const { return _d;}
 
-    static vector<SEIRState> all_states( int dE, int dI);
+    static SEIRStateSpace all_states( int dE, int dI);
 
 private:
     Phase _p;
@@ -28,6 +39,9 @@ private:
 
 ostream& operator<<(ostream& os, const SEIRState &s);
 
+
+
+Message basic_states( const Message &message, const vector<any> &states);
 
 
 
