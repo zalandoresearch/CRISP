@@ -135,9 +135,12 @@ void seir_state_test() {
                 0.03589255717, 0.03151878504, 0.02747963753, 0.02380914891, 0.02051758911,
                 0.01759822872, 0.01503287457, 0.0127962154, 0.01085910889, 0.009190974483,
                 0.007761463001, 0.006541562648, 0.005504277076};
+    
     double p0 = 0.02;
     double p1 = 0.99;
 
+    double alpha = 0.001;
+    double beta = 0.01;
 
     auto states = SEIRState::all_states( qE.size()-1, qI.size()-1);
     for( auto s: states)
@@ -150,17 +153,23 @@ void seir_state_test() {
 
     vector<unique_ptr<Factor>> factors;
     for( unsigned int s=0; s<S; s++)
-        factors.emplace_back(new SEIRInitFactor(nodes[s], s==0));
+        factors.emplace_back(new SEIRInitFactor(nodes[s]));
 
-    for( unsigned int t=1; t<T; t++) {
+    for( unsigned int t=0; t<T-1; t++) {
         for( unsigned int s=0; s<S; s++) {
-            if      (t==17 && s==0) factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, nodes[S*(t-1)+s], nodes[S*t+s], vector<SEIRNode*>({&nodes[S*t+1]}) ));
-            else if (t==17 && s==1) factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, nodes[S*(t-1)+s], nodes[S*t+s], vector<SEIRNode*>({&nodes[S*t+0]}) ));
+            if      (t==17 && s==0) factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, nodes[S*t+s], nodes[S*(t+1)+s], vector<SEIRNode*>({&nodes[S*t+1]}) ));
+            else if (t==17 && s==1) factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, nodes[S*t+s], nodes[S*(t+1)+s], vector<SEIRNode*>({&nodes[S*t+0]}) ));
             
             else
-                factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, nodes[S*(t-1)+s], nodes[S*t+s] ));
+                factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, nodes[S*t+s], nodes[S*(t+1)+s] ));
         }
     }   
+
+
+    factors.emplace_back( new SEIRTestFactor( nodes[S*9+0], false, alpha, beta) );
+    factors.emplace_back( new SEIRTestFactor( nodes[S*15+0], true, alpha, beta) );
+    factors.emplace_back( new SEIRTestFactor( nodes[S*19+0], true, alpha, beta) );
+    factors.emplace_back( new SEIRTestFactor( nodes[S*29+2], true, alpha, beta) );
 
     // for( auto f = factors.begin(); f!=factors.end(); f++) {
     //     cerr << (*f)->_nodes.size() <<"(" << (*f) << "): ";

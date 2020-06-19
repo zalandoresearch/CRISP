@@ -73,4 +73,15 @@ public:
     virtual double potential( vector<vector<any>::const_iterator>);
 };
 
+
+class SEIRTestFactor: public Factor {
+    bool _positive;
+    double _alpha;
+    double _beta;
+public:
+    SEIRTestFactor( SEIRNode &in, bool positive, double alpha, double beta);
+    virtual ~SEIRTestFactor(){}
+    virtual double potential( vector<vector<any>::const_iterator>);
+};
+
 #endif

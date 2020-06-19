@@ -379,3 +379,23 @@ double SEIRInitFactor::potential( vector<vector<any>::const_iterator> state_its)
     else 
         return out == SEIRState(SEIRState::S) ? 1.0 : 0.0;
 }
+
+
+SEIRTestFactor::SEIRTestFactor( SEIRNode &out, bool positive, double alpha, double beta) :
+    Factor({&out})
+{
+    _positive = positive;
+    _alpha = alpha;
+    _beta = beta;
+}
+
+double SEIRTestFactor::potential( vector<vector<any>::const_iterator> state_its) {
+
+    assert(state_its.size()==1);
+    SEIRState out = std::any_cast<SEIRState>(*(state_its[0]));
+
+    if( _positive) 
+        return out.phase() == SEIRState::I ? 1.0-_alpha : _beta;
+    else 
+        return out.phase() == SEIRState::I ? _alpha : 1.0-_beta;
+}
