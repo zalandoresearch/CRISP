@@ -22,10 +22,7 @@ Message normalize(const Message &v_) {
     return v;
 }
 
-Node::Node( int N): _N(N),  _messages(), _states(N) {
-    for( int i=0; i<N; i++)   
-        _states[i] = i;
-}
+Node::Node( int N): _N(N),  _messages() {}
 
 
 void Node::update() {
@@ -48,10 +45,8 @@ MessagePtr Node::message_to( const Factor *f) const {
 
 
 
-SEIRNode::SEIRNode( const vector<SEIRState> &all_states) :
-    Node(all_states.size()) 
+SEIRNode::SEIRNode( const SEIRStateSpace &all_states) :
+    Node(all_states.size()), _states( all_states) 
 {
-    for(size_t i=0; i<all_states.size(); i++)
-        _states[i] = all_states[i];
 }
 

@@ -41,7 +41,7 @@ ostream& operator<<(ostream& os, const SEIRState &s);
 
 
 
-Message basic_states( const Message &message, const vector<any> &states);
+Message basic_states( const Message &message, const SEIRStateSpace &states);
 
 
 

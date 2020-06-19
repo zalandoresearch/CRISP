@@ -6,7 +6,6 @@
 #include <vector>
 #include <iostream>
 #include <cmath>
-#include <any>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -32,16 +31,13 @@ MessagePtr Factor::message_to( Node* n) {
 
 
     vector< MessagePtr>  incoming_messages;
-    vector< vector<std::any>> input_states;
     vector< Message::const_iterator>   msg_its;
-    vector< vector<std::any>::const_iterator> state_its;
+
+    vector< unsigned int> state_its(_nodes.size());
 
     for( unsigned int i=0; i!=_nodes.size(); i++ ) {
         incoming_messages.push_back(_nodes[i]->message_to(this));
         msg_its.push_back(incoming_messages[i]->begin());
-
-        input_states.push_back(_nodes[i]->_states);
-        state_its.push_back( input_states[i].begin());
     }
 
     MessagePtr outgoing_message( new Message(n->_N, 0.0));
@@ -68,7 +64,7 @@ MessagePtr Factor::message_to( Node* n) {
             if( msg_its[i] == incoming_messages[i]->end()) {
                 // if they overrun, wrap them over to the beginning 
                 msg_its[i]   = incoming_messages[i]->begin();
-                state_its[i] = input_states[i].begin();  
+                state_its[i] = 0;  
                 if(_nodes[i] == n) 
                     out_msg_it = outgoing_message->begin(); 
 
@@ -88,13 +84,13 @@ TableFactor::TableFactor( vector<Node*> &nodes, Message tab) :
 {
 }
 
-double TableFactor::potential( vector<vector<any>::const_iterator> state_its) {
+double TableFactor::potential( const vector<unsigned int> & state_its) {
     assert( state_its.size()== _nodes.size());
 
     int idx = 0;
     for( unsigned int i=0; i<_nodes.size(); i++) {
         if( i>0) idx *= _nodes[i-1]->size();
-        idx += std::any_cast<int>(*(state_its[i]));
+        idx += state_its[i];
         //cout << _nodes[i]->size() << " " <<  std::any_cast<int>(*(state_its[i])) << endl;
     }
     //cout << "ïdx: " << idx << endl;
@@ -105,7 +101,7 @@ double TableFactor::potential( vector<vector<any>::const_iterator> state_its) {
 SEIRFactor::SEIRFactor( const Message &qE, const Message &qI, 
                         double p0, double p1, 
                         SEIRNode &in, SEIRNode &out, vector<SEIRNode *> contacts) : 
-    Factor(init_helper(in, out, contacts)), /* _qE(qE), _qI(qI), */ _piE(init_pi(qE)), _piI(init_pi(qI)), _p0(p0), _p1(p1) 
+    Factor(init_helper(in, out, contacts)), /* _qE(qE), _qI(qI), */ _piE(init_pi(qE)), _piI(init_pi(qI)), _p0(p0), _p1(p1), _states(in.states()) 
 {
 }
 
@@ -135,20 +131,16 @@ const vector<double> SEIRFactor::init_pi( const vector<double> q) {
 
 MessagePtr SEIRFactor::message_horizontally( bool forward) {
 
-    const vector<std::any>& input_states = _nodes[0]->states();
-    const vector<std::any> output_states = _nodes[1]->states();
-
     VirusLoad load;
     for( size_t i=2; i<_nodes.size(); i++) {
         MessagePtr  contact_message = _nodes[i]->message_to(this);
-        const vector<std::any>& contact_states = _nodes[i]->states();
-            double p = 0, p_tot = 0;
-            for( size_t i=0; i< contact_message->size(); i++) {
-                p_tot += (*contact_message)[i];
-                if( std::any_cast<SEIRState>(contact_states[i]).phase() == SEIRState::I) 
-                    p += (*contact_message)[i];
-            }
-            load.add_source( p/p_tot, 1.0);
+        double p = 0, p_tot = 0;
+        for( size_t i=0; i< contact_message->size(); i++) {
+            p_tot += (*contact_message)[i];
+            if( _states[i].phase() == SEIRState::I) 
+                p += (*contact_message)[i];
+        }
+        load.add_source( p/p_tot, 1.0);
        }
     //if(_nodes.size()>2)
     //    cerr <<"load: " << load << endl;
@@ -179,14 +171,14 @@ MessagePtr SEIRFactor::message_horizontally( bool forward) {
     Message::const_iterator it_output_message;
 
     it_input_message = input_message->begin();
-    for( auto it_input_states = input_states.cbegin(); it_input_states != input_states.cend(); ++it_input_states) 
+    for( auto it_input_states = _states.cbegin(); it_input_states != _states.cend(); ++it_input_states) 
     {
-        auto in = std::any_cast<SEIRState>(*it_input_states);
+        auto in = *it_input_states;
 
         it_output_message = output_message->begin();
-        for( auto it_output_states = output_states.cbegin(); it_output_states != output_states.cend(); ++it_output_states) 
+        for( auto it_output_states = _states.cbegin(); it_output_states != _states.cend(); ++it_output_states) 
         {
-            auto out = std::any_cast<SEIRState>(*it_output_states);
+            auto out = *it_output_states;
 
             const double& in_value = *(forward ? it_input_message : it_output_message);
             double &out_value = const_cast<double &>(*(forward ? it_output_message : it_input_message));
@@ -249,11 +241,10 @@ MessagePtr SEIRFactor::message_vertically( Node *n) {
         if( _nodes[i] != n) {
 
             MessagePtr  contact_message = _nodes[i]->message_to(this);
-            const vector<std::any>& contact_states = _nodes[i]->states();
             double p = 0, p_tot = 0;
             for( size_t i=0; i< contact_message->size(); i++) {
                 p_tot += (*contact_message)[i];
-                if( std::any_cast<SEIRState>(contact_states[i]).phase() == SEIRState::I) 
+                if( _states[i].phase() == SEIRState::I) 
                     p += (*contact_message)[i];
             }
             load.add_source( p/p_tot, 1.0);
@@ -265,9 +256,6 @@ MessagePtr SEIRFactor::message_vertically( Node *n) {
     auto input_message = _nodes[0]->message_to(this);
     auto output_message = _nodes[1]->message_to(this);
 
-    const vector<any>& input_states = _nodes[0]->_states;
-    const vector<any>& output_states = _nodes[1]->_states;
-
 
     Message::const_iterator it_input_message;
     Message::const_iterator it_output_message;
@@ -276,14 +264,14 @@ MessagePtr SEIRFactor::message_vertically( Node *n) {
     Message p_outgoing(2, 0.0);
     for(int j=0; j<2; j++) {
         it_input_message = input_message->begin();
-        for( auto it_input_states = input_states.cbegin(); it_input_states != input_states.cend(); ++it_input_states) 
+        for( auto it_input_states = _states.cbegin(); it_input_states != _states.cend(); ++it_input_states) 
         {
-            auto in = std::any_cast<SEIRState>(*it_input_states);
+            auto in = *it_input_states;
 
             it_output_message = output_message->begin();
-            for( auto it_output_states = output_states.cbegin(); it_output_states != output_states.cend(); ++it_output_states) 
+            for( auto it_output_states = _states.cbegin(); it_output_states != _states.cend(); ++it_output_states) 
             {
-                auto out = std::any_cast<SEIRState>(*it_output_states);
+                auto out = *it_output_states;
 
                 const double& in_value = *it_input_message;
                 const double &out_value = *it_output_message;
@@ -335,13 +323,13 @@ MessagePtr SEIRFactor::message_vertically( Node *n) {
             }
             ++it_input_message;
         }
-    cerr << p_outgoing << endl;
+    //cerr << p_outgoing << endl;
     } 
 
     p_outgoing = normalize(p_outgoing);
     MessagePtr outgoing_message( new Message( n->_N));
     for(int i=0; i<n->_N; i++) {
-        (*outgoing_message)[i] = (any_cast<SEIRState>(_nodes[0]->_states[i]).phase()==SEIRState::I ? p_outgoing[1] : p_outgoing[0]);
+        (*outgoing_message)[i] = (_states[i].phase()==SEIRState::I ? p_outgoing[1] : p_outgoing[0]);
     }
 
     return outgoing_message;
@@ -358,21 +346,22 @@ MessagePtr SEIRFactor::message_to( Node *n) {
 }
 
 
-double SEIRFactor::potential( vector<vector<any>::const_iterator> ) {
+double SEIRFactor::potential( const vector<unsigned int> & ) {
 
     assert(false); // SEIRFactor implements its own message_to() method
 }
 
 
 SEIRInitFactor::SEIRInitFactor( SEIRNode &out, bool patient_zero) :
-    Factor({&out}), _patient_zero(patient_zero)
+    Factor({&out}), _patient_zero(patient_zero), _states(out.states())
 {
 }
 
-double SEIRInitFactor::potential( vector<vector<any>::const_iterator> state_its) {
+double SEIRInitFactor::potential( const vector<unsigned int> &state_its) {
 
     assert(state_its.size()==1);
-    SEIRState out = std::any_cast<SEIRState>(*(state_its[0]));
+
+    SEIRState out = _states[state_its[0]];
 
     if( _patient_zero) 
         return out == SEIRState(SEIRState::E,1) ? 1.0 : 0.0;
@@ -382,17 +371,16 @@ double SEIRInitFactor::potential( vector<vector<any>::const_iterator> state_its)
 
 
 SEIRTestFactor::SEIRTestFactor( SEIRNode &out, bool positive, double alpha, double beta) :
-    Factor({&out})
+    Factor({&out}), _states(out.states())
 {
     _positive = positive;
     _alpha = alpha;
     _beta = beta;
 }
 
-double SEIRTestFactor::potential( vector<vector<any>::const_iterator> state_its) {
+double SEIRTestFactor::potential( const vector<unsigned int> &state_its) {
 
-    assert(state_its.size()==1);
-    SEIRState out = std::any_cast<SEIRState>(*(state_its[0]));
+    SEIRState out = _states[state_its[0]];
 
     if( _positive) 
         return out.phase() == SEIRState::I ? 1.0-_alpha : _beta;

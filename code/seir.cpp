@@ -63,14 +63,14 @@ ostream& operator<<(ostream& os, const SEIRState &s) {
 }
 
 
-Message basic_states( const Message &message, const vector<any> &states) {
+Message basic_states( const Message &message, const SEIRStateSpace &states) {
 
     assert(message.size() == states.size());
 
     Message out(4);
 
     for( size_t i=0; i<message.size(); i++) {
-        out[any_cast<SEIRState>(states[i]).phase()] += message[i]; 
+        out[states[i].phase()] += message[i]; 
     }
     return out;
 }
