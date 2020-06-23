@@ -13,18 +13,27 @@ typedef vector<SEIRState> SEIRStateSpace;
 
 
 
-
+/*
+// This enum captures the four states of infection that an individual can be in
+enum SEIRState 
+{   Susceptible = 0, 
+    Exposed     = 1, 
+    Infectious  = 2,
+    Recovered   = 3
+};
+*/
 
 
 class SEIRState {
 public:
-    enum Phase { S, E, I, R};
+    enum Phase { S=0, E=1, I=2, R=3};
 
     SEIRState( Phase p, int d=0);
     SEIRState( const SEIRState &other);
 
     SEIRState next( bool change=false) const;
     bool operator== (const SEIRState &other) const;
+    bool operator== (Phase other) const;
 
     Phase phase() const { return _p;}
     int days() const { return _d;}

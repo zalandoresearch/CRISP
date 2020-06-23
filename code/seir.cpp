@@ -40,6 +40,10 @@ bool SEIRState::operator == (const SEIRState &other) const {
     return false;
 }
 
+bool SEIRState::operator == (SEIRState::Phase other) const {
+    return _p == other;
+}
+
 SEIRStateSpace SEIRState::all_states( int dE, int dI) {
 
     SEIRStateSpace res;

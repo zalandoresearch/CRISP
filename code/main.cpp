@@ -205,19 +205,23 @@ void virus_load_test() {
     VirusLoad Px;
     cout << Px << endl;
 
+    // Px.add_source( 0.8, 1.0);
+    // Px.add_source( 0.8, 1.0);
+    // Px.add_source( 0.8, 1.0);
+    Px.add_source( 0.1, 1.0);
     Px.add_source( 0.1, 1.0);
     Px.add_source( 0.1, 1.1);
     Px.add_source( 0.1, 0.95);
-    Px.add_source( 0.1, 1.7);
     
+
     cout << Px << endl;
 
 }
 
 int main() {
-    loopy_test();
+    //loopy_test();
     virus_load_test();
-    seir_state_test();
+    //seir_state_test();
     return 0;
 }
 
