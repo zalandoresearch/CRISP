@@ -103,7 +103,12 @@ class GibbsPopulationInfectionStatus : public PopulationInfectionStatus {
         vector<vector<int>>  getIndividualTrace() const;
         
         vector<vector<double>> getInfectionStatus(int N=0, int burnIn=0, int skip=0);
-        
+
+        // get the posterior marginal distributions P(z_{u,t}|D_{contact}, D_{test})
+        virtual array3<double> getMarginals(int N=0, int burnIn=0, int skip=0);
+
+        // sample posterior mariginals $P_{u,t}(z_{u,t})$
+        virtual array3<int> sample( int N, int burnIn=0, int skip=0);       
 };
 
 

@@ -285,6 +285,7 @@ vector<vector<vector<int>>> GibbsPopulationInfectionStatus::gibbsSample(int N, i
     }
 
     for(int n=0; n<N; ++n) {
+
         for(int s=0; s<skip; ++s) {
             for(int u=0; u< _noIndividuals; ++u) {
                 gibbsSampleU(u);
@@ -292,7 +293,7 @@ vector<vector<vector<int>>> GibbsPopulationInfectionStatus::gibbsSample(int N, i
         }
 
         for(int u=0; u< _noIndividuals; ++u) {
-            gibbsSampleU(u);
+            if(n>0) gibbsSampleU(u);
             sample[n][u][0] = _individualTrace[u].getT0();
             sample[n][u][1] = _individualTrace[u].getDE();
             sample[n][u][2] = _individualTrace[u].getDI();
@@ -473,3 +474,39 @@ vector<vector<double>> GibbsPopulationInfectionStatus::getInfectionStatus(int N,
 }
 
 
+// get the posterior marginal distributions P(z_{u,t}|D_{contact}, D_{test})
+array3<double> GibbsPopulationInfectionStatus::getMarginals(int N, int burnIn, int skip) {
+
+    auto Z = gibbsSample(N, burnIn, skip);
+    array3<double> p(_noIndividuals, array2<double>( _noTimeSteps, array1<double>( 4, 0.0)));
+
+    for( int n=0; n<N; n++)
+        for( int u=0; u<_noIndividuals; u++) {
+            int t=0;
+            for( int t_=0; t_<Z[n][u][0]; t_++) p[u][t++][0] += 1.0/N;
+            for( int t_=0; t_<Z[n][u][1]; t_++) p[u][t++][1] += 1.0/N;
+            for( int t_=0; t_<Z[n][u][2]; t_++) p[u][t++][2] += 1.0/N;
+            while(t<_noTimeSteps) p[u][t++][3] += 1.0/N;            
+        }
+
+    return p;
+}
+
+
+// sample posterior mariginals $P_{u,t}(z_{u,t})$
+array3<int> GibbsPopulationInfectionStatus::sample( int N, int burnIn, int skip) {
+
+    auto Z = gibbsSample(N, burnIn, skip);
+    array3<int> Z_(N, array2<int>( _noIndividuals, array1<int>( _noTimeSteps, 0)));
+
+    for( int n=0; n<N; n++)
+        for( int u=0; u<_noIndividuals; u++) {
+            int t=0;
+            for( int t_=0; t_<Z[n][u][0]; t_++) Z_[n][u][t++] = 0;
+            for( int t_=0; t_<Z[n][u][1]; t_++) Z_[n][u][t++] = 1;
+            for( int t_=0; t_<Z[n][u][2]; t_++) Z_[n][u][t++] = 2;
+            while(t<_noTimeSteps) Z_[n][u][t++] = 3;            
+        }
+
+    return Z_;
+}

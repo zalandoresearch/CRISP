@@ -11,7 +11,6 @@ using namespace std;
 
 
 
-
 // This enum captures the two test outcomes
 enum TestOutcome 
 {   Negative = 0, 
@@ -58,6 +57,21 @@ class Contact {
 };
 
 std::ostream &operator<<(std::ostream &os, Contact const &c);
+
+
+
+
+template< typename T>
+using array1 = vector<T>;
+
+template< typename T>
+using array2 = vector<array1<T>>;
+
+template< typename T>
+using array3 = vector<array2<T>>;
+
+template< typename T>
+using array4 = vector<array3<T>>;
 
 
 
@@ -135,9 +149,11 @@ public:
             return _advance(contacts, outcomes, ignore_tests, true);
     }
 
-    virtual vector<vector<int>> getIndividualTrace() const = 0;
+    // get the posterior marginal distributions P(z_{u,t}|D_{contact}, D_{test})
+    virtual array3<double> getMarginals(int N=0, int burnIn=0, int skip=0) = 0;
 
-    virtual vector<vector<double>> getInfectionStatus(int N=0, int burnIn=0, int skip=0) = 0;
+    // sample posterior mariginals $P_{u,t}(z_{u,t}|D_{contact}, D_{test})$
+    virtual array3<int> sample( int N, int burnIn=0, int skip=0) = 0;
 
 };
 

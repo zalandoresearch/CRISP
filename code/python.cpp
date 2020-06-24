@@ -9,21 +9,6 @@ namespace py = pybind11;
 
 
 
-// // Returns all three numbers in an array
-// py::array_t<int> array(void) {
-//     int *ret = new int[3];
-//     ret[0] = getT0();
-//     ret[1] = getDE();
-//     ret[2] = getDI();
-//     return py::array_t<int>(3, ret);
-// }
-
-
-
-template <class T>
-py::array_t<T> array_from_vector( size_t size[], const vector<T> &vec) {
-    return py::array_t(size, vec.data());
-}
 
 
 
@@ -68,6 +53,24 @@ PYBIND11_MODULE(crisp, m) {
                       bool /*patientZero*/>())
         .def(py::init<const GibbsPopulationInfectionStatus &>())
 
+        .def("get_marginals", 
+            [] (GibbsPopulationInfectionStatus &g, int N, bool burnin, int skip) {
+                return (py::array)py::cast(g.getMarginals(N, burnin, skip)); 
+            },
+            py::arg("N"), 
+            py::arg("burnin")=0, 
+            py::arg("skip")=0, 
+            py::return_value_policy::move)
+        
+        .def("sample", 
+            [] (GibbsPopulationInfectionStatus &g, int N, bool burnin, int skip) {
+                return (py::array)py::cast(g.sample(N, burnin, skip)); 
+            },
+            py::arg("N"), 
+            py::arg("burnin")=0, 
+            py::arg("skip")=0, 
+            py::return_value_policy::move)
+        
         .def("gibbs_sample", 
             [] (GibbsPopulationInfectionStatus &g, int N, bool burnin, int skip) {
                 return (py::array)py::cast(g.gibbsSample(N, burnin, skip)); 
