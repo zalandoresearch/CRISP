@@ -39,8 +39,6 @@ public:
 
 class SEIRFactor : public Factor {
 
-    //const Message& _qE; 
-    //const Message& _qI;
     const Message _piE; 
     const Message _piI;
     double _p0;

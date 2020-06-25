@@ -262,14 +262,6 @@ GibbsPopulationInfectionStatus::GibbsPopulationInfectionStatus(int S, int T,
     initPrior();
 }
 
-// GibbsPopulationInfectionStatus::GibbsPopulationInfectionStatus( const GibbsPopulationInfectionStatus &other) :
-//     PopulationInfectionStatus(other),
-//     _individualTrace(other._individualTrace)
-
-// {
-//             initPrior();
-// }
-
 // implements Gibbs sampling over the whole population
 vector<vector<vector<int>>> GibbsPopulationInfectionStatus::gibbsSample(int N, int burnIn, int skip) {
 

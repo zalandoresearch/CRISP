@@ -51,7 +51,6 @@ PYBIND11_MODULE(crisp, m) {
                       double /*p0*/,
                       double /*p1*/,
                       bool /*patientZero*/>())
-        //.def(py::init<const GibbsPopulationInfectionStatus &>())
 
         .def("get_marginals", 
             [] (GibbsPopulationInfectionStatus &g, int N, int burnin, int skip) {
@@ -121,7 +120,6 @@ PYBIND11_MODULE(crisp, m) {
                       double /*p0*/,
                       double /*p1*/,
                       bool /*patientZero*/>())
-        //.def(py::init<const LBPPopulationInfectionStatus &>())
 
         .def("get_marginals", 
             [] (LBPPopulationInfectionStatus &g, int N, int burnin, int skip) {

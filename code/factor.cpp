@@ -116,15 +116,6 @@ vector<Node *> SEIRFactor::init_helper(SEIRNode &in, SEIRNode &out, vector<SEIRN
 const vector<double> SEIRFactor::init_pi( const Distribution &q) {
 
     auto res = Message(q.getMaxOutcomeValue()+1);
-    // double scale = 0;
-    // for( int i=q.size()-1; i>=0; i--) 
-    //     scale += q[i];
-
-    // double sum = 0;
-    // for( int i=q.size()-1; i>=0; i--) {
-    //     sum += q[i]/scale;
-    //     res[i] = q[i]/scale/sum;
-    // }
     for( int i=0; i<res.size(); i++)
         res[i] = exp( q.getLogP(i)-q.getLogPTail(i)); 
     return res;
@@ -144,30 +135,19 @@ MessagePtr SEIRFactor::message_horizontally( bool forward) {
         }
         load.add_source( p/p_tot, 1.0);
        }
-    //if(_nodes.size()>2)
-    //    cerr <<"load: " << load << endl;
 
     MessagePtr outgoing_message( new Message(_nodes[ forward ? 1 : 0]->size(), 0.0));
 
     MessagePtr input_message;
     MessagePtr output_message;
     if( forward) {
-        //cerr << "forward\n";
         input_message = _nodes[0]->message_to(this);
         output_message = outgoing_message;
     }
     else {
-        //cerr << "backward\n";
         input_message = outgoing_message;
         output_message = _nodes[1]->message_to(this);
     }
-
-    // cerr << "input_message" << input_message << endl;
-    // cerr << "outgoing_message" << outgoing_message << endl;
-
-    // cerr << "input_message" << *input_message << endl;
-    // cerr << "output_message" << *output_message << endl;
-    // cerr << "forward="<< forward << endl;
 
     Message::const_iterator it_input_message;
     Message::const_iterator it_output_message;
@@ -343,7 +323,6 @@ MessagePtr SEIRFactor::message_to( Node *n) {
 
     if( n==_nodes[0]) return message_horizontally( /*forward =*/ false);
     if( n==_nodes[1]) return message_horizontally( /*forward =*/ true);
-    //return MessagePtr( new Message(53,1.0)); 
     return message_vertically( n);
 }
 
