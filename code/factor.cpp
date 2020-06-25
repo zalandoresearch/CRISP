@@ -98,7 +98,7 @@ double TableFactor::potential( const vector<unsigned int> & state_its) {
 }
 
 
-SEIRFactor::SEIRFactor( const Message &qE, const Message &qI, 
+SEIRFactor::SEIRFactor( const Distribution &qE, const Distribution &qI, 
                         double p0, double p1, 
                         SEIRNode &in, SEIRNode &out, vector<SEIRNode *> contacts) : 
     Factor(init_helper(in, out, contacts)), /* _qE(qE), _qI(qI), */ _piE(init_pi(qE)), _piI(init_pi(qI)), _p0(p0), _p1(p1), _states(in.states()) 
@@ -113,18 +113,20 @@ vector<Node *> SEIRFactor::init_helper(SEIRNode &in, SEIRNode &out, vector<SEIRN
 }
 
 
-const vector<double> SEIRFactor::init_pi( const vector<double> q) {
+const vector<double> SEIRFactor::init_pi( const Distribution &q) {
 
-    auto res = Message(q.size());
-    double scale = 0;
-    for( int i=q.size()-1; i>=0; i--) 
-        scale += q[i];
+    auto res = Message(q.getMaxOutcomeValue()+1);
+    // double scale = 0;
+    // for( int i=q.size()-1; i>=0; i--) 
+    //     scale += q[i];
 
-    double sum = 0;
-    for( int i=q.size()-1; i>=0; i--) {
-        sum += q[i]/scale;
-        res[i] = q[i]/scale/sum;
-    }
+    // double sum = 0;
+    // for( int i=q.size()-1; i>=0; i--) {
+    //     sum += q[i]/scale;
+    //     res[i] = q[i]/scale/sum;
+    // }
+    for( int i=0; i<res.size(); i++)
+        res[i] = exp( q.getLogP(i)-q.getLogPTail(i)); 
     return res;
 }
 

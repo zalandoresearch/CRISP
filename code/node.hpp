@@ -30,6 +30,9 @@ class Factor;
 
 class Node {
     friend class Factor;
+
+    Node( const Node &other) = delete;
+    
 public:
     vector<Factor*> _factors;            // list of associated factors
 

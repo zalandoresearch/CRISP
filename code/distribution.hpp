@@ -20,27 +20,26 @@ class Distribution {
         // Copy constructor
         Distribution(const Distribution& d);
 
-        // Destructs the distribution
+        // Constructs the distribution
+        Distribution(const vector<double>& pdf);
+
         ~Distribution();
 
-        // Constructs the distribution
-        Distribution(vector<double>& pdf);
-
         // Returns the log-probability mass function at value k
-        double getLogP(int k) {
+        double getLogP(int k) const {
             return((k <= _maxOutcomeValue)?_logPdf[k]:-INFINITY);
         }
 
         // Returns the log probability mass function of the truncated distribution at value k
-        double getLogPTail(int k) {
+        double getLogPTail(int k) const {
             return((k <= _maxOutcomeValue)?_logPdfTail[k]:-INFINITY);
         }
 
         // Get the maximum outcome value
-        int getMaxOutcomeValue() { return _maxOutcomeValue; }
+        int getMaxOutcomeValue() const { return _maxOutcomeValue; }
 
         // Get the minimum outcome value
-        int getMinOutcomeValue() { return _minOutcomeValue; }
+        int getMinOutcomeValue() const { return _minOutcomeValue; }
 
 };
 
@@ -53,12 +52,12 @@ class Geometric {
         Geometric(double p0): _p0(p0) {}
 
         // Returns the log-probability mass function at value k
-        double getLogP(int k) {
+        double getLogP(int k) const {
             return((k<0)?(-INFINITY):((k)*log(1.0-_p0)+log(_p0)));
         }
 
         // Returns the log probability mass function of the truncated distribution at value k
-        double getLogPTail(int k) {
+        double getLogPTail(int k) const {
             return((k<0)?0:((k)*log(1.0-_p0)));
         }
 };

@@ -242,7 +242,7 @@ GibbsPopulationInfectionStatus::GibbsPopulationInfectionStatus(int S, int T,
                 Distribution& qE, Distribution& qI,
                 double alpha, double beta, double p0, double p1,
                 bool patientZero) :
-    PopulationInfectionStatus( S, T, contacts, outcomes, qE, qI, alpha, beta, p0, p1, patientZero),
+    PopulationInfectionStatus( S, 1, contacts, outcomes, qE, qI, alpha, beta, p0, p1, patientZero),
     _individualTrace(S, InfectionTrace(1,0,0)),
     _infectiousContactCounts(_noIndividuals) {
 
@@ -262,13 +262,13 @@ GibbsPopulationInfectionStatus::GibbsPopulationInfectionStatus(int S, int T,
     initPrior();
 }
 
-GibbsPopulationInfectionStatus::GibbsPopulationInfectionStatus( const GibbsPopulationInfectionStatus &other) :
-    PopulationInfectionStatus(other),
-    _individualTrace(other._individualTrace)
+// GibbsPopulationInfectionStatus::GibbsPopulationInfectionStatus( const GibbsPopulationInfectionStatus &other) :
+//     PopulationInfectionStatus(other),
+//     _individualTrace(other._individualTrace)
 
-{
-            initPrior();
-}
+// {
+//             initPrior();
+// }
 
 // implements Gibbs sampling over the whole population
 vector<vector<vector<int>>> GibbsPopulationInfectionStatus::gibbsSample(int N, int burnIn, int skip) {

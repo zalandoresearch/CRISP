@@ -14,6 +14,6 @@ FIND_PACKAGE(PythonInterp 3)
 
 project(crisp CXX)
 add_subdirectory(pybind11)
-pybind11_add_module(crisp python.cpp gibbs.cpp distribution.cpp crisp.cpp node.cpp factor.cpp seir.cpp)
+pybind11_add_module(crisp python.cpp lbp.cpp gibbs.cpp distribution.cpp crisp.cpp node.cpp factor.cpp seir.cpp)
 
-add_executable (testit main.cpp node.cpp factor.cpp seir.cpp)
+add_executable (testit main.cpp node.cpp factor.cpp seir.cpp distribution.cpp)

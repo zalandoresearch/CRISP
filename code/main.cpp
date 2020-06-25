@@ -149,40 +149,45 @@ void seir_state_test() {
 
     unsigned int S = 3;
     unsigned int T = 30;
-    vector<SEIRNode> nodes(S*T, SEIRNode(states));
+    vector<unique_ptr<SEIRNode>> nodes;//, SEIRNode(states));
+    for( int u=0; u<S; u++)
+        for( int t=0; t<T; t++)
+            nodes.emplace_back(new SEIRNode(states));
+
 
     vector<unique_ptr<Factor>> factors;
     for( unsigned int s=0; s<S; s++)
-        factors.emplace_back(new SEIRInitFactor(nodes[s]));
+        factors.emplace_back(new SEIRInitFactor(*nodes[s]));
 
     for( unsigned int t=0; t<T-1; t++) {
         for( unsigned int s=0; s<S; s++) {
-            if      (t==17 && s==0) factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, nodes[S*t+s], nodes[S*(t+1)+s], vector<SEIRNode*>({&nodes[S*t+1]}) ));
-            else if (t==17 && s==1) factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, nodes[S*t+s], nodes[S*(t+1)+s], vector<SEIRNode*>({&nodes[S*t+0],&nodes[S*t+2]}) ));
-            else if (t==17 && s==2) factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, nodes[S*t+s], nodes[S*(t+1)+s], vector<SEIRNode*>({&nodes[S*t+1]}) ));
+            if      (t==17 && s==0) factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, *nodes[S*t+s], *nodes[S*(t+1)+s], vector<SEIRNode*>({nodes[S*t+1].get()}) ));
+            else if (t==17 && s==1) factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, *nodes[S*t+s], *nodes[S*(t+1)+s], vector<SEIRNode*>({nodes[S*t+0].get(),nodes[S*t+2].get()}) ));
+            else if (t==17 && s==2) factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, *nodes[S*t+s], *nodes[S*(t+1)+s], vector<SEIRNode*>({nodes[S*t+1].get()}) ));
             
             else
-                factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, nodes[S*t+s], nodes[S*(t+1)+s] ));
+                factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, *nodes[S*t+s], *nodes[S*(t+1)+s] ));
         }
     }   
 
 
-    factors.emplace_back( new SEIRTestFactor( nodes[S*9+0], false, alpha, beta) );
-    factors.emplace_back( new SEIRTestFactor( nodes[S*15+0], true, alpha, beta) );
-    factors.emplace_back( new SEIRTestFactor( nodes[S*19+0], true, alpha, beta) );
-    factors.emplace_back( new SEIRTestFactor( nodes[S*29+2], true, alpha, beta) );
+    factors.emplace_back( new SEIRTestFactor( *nodes[S*9+0], false, alpha, beta) );
+    factors.emplace_back( new SEIRTestFactor( *nodes[S*15+0], true, alpha, beta) );
+    factors.emplace_back( new SEIRTestFactor( *nodes[S*19+0], true, alpha, beta) );
+    factors.emplace_back( new SEIRTestFactor( *nodes[S*29+2], true, alpha, beta) );
 
     // for( auto f = factors.begin(); f!=factors.end(); f++) {
     //     cerr << (*f)->_nodes.size() <<"(" << (*f) << "): ";
     //     for( auto n: (*f)->_nodes) cerr << (void*)(n) << " "; 
     //     cerr << endl;
     // }
-    
+    cerr << factors.size() << "factors" << endl;
+
     for( int i=0; i<25; i++) {
         for(auto &node: nodes) 
-            node.update();
-        for( auto node = nodes.rbegin(); node !=nodes.rend(); ++node)
             node->update();
+        for( auto node = nodes.rbegin(); node !=nodes.rend(); ++node)
+            (*node)->update();
     }
 
     cout << std::fixed; 
@@ -192,7 +197,7 @@ void seir_state_test() {
     // cout << *fac << endl;
     // cout << "sum="<< sum(*fac) << endl;
     for(auto &node: nodes) {
-        cout << normalize(basic_states(*node.message_to(), node.states())) <<endl;
+        cout << normalize(basic_states(*node->message_to(), node->states())) <<endl;
     }
     //f.message_to( &node1);
 
@@ -219,9 +224,9 @@ void virus_load_test() {
 }
 
 int main() {
-    //loopy_test();
+    loopy_test();
     virus_load_test();
-    //seir_state_test();
+    seir_state_test();
     return 0;
 }
 

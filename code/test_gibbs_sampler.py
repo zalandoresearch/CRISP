@@ -2,7 +2,7 @@ import argparse
 import sys
 sys.path.append('..')
 
-from crisp import Distribution, PopulationInfectionStatus
+from crisp import Distribution, GibbsPIS, LBPPIS
 from scipy.stats import nbinom
 from itertools import count
 
@@ -112,8 +112,8 @@ qI = Distribution([float(q)/sum(qIVec) for q in qIVec])
 ##########################################################################################
 ### sample with the Gibbs sampler
 
-Nsamp = 1000
-crisp = PopulationInfectionStatus( S, T, contacts, tests,qE,qI, alpha, beta, p0, p1, False)
+Nsamp = 10000
+crisp = GibbsPIS( S, T, contacts, tests,qE,qI, alpha, beta, p0, p1, False)
 
 t = time.time()
 #Z = crisp.gibbs_sample(Nsamp)
@@ -141,7 +141,7 @@ for i in range(Nsamp):
     ct = [c for c in contacts if c[2] == 0]
     tt = [o for o in tests if o[1] == 0]
 
-    crisp_fwd = PopulationInfectionStatus( S, 1, ct,tt, qE,qI, alpha, beta, p0, p1, True)
+    crisp_fwd = GibbsPIS( S, 1, ct,tt, qE,qI, alpha, beta, p0, p1, True)
     for t in range(1,T):
         ct = [c for c in contacts if c[2] == t]
         tt = [o for o in tests if o[1] == t]
@@ -178,6 +178,25 @@ for i in range( min(5,S)):
     plot(p[i],'.-')
     grid(True)
 suptitle("Gibbs sampling in iteratively built up CRISP")
+
+
+##########################################################################################
+### inference with the LBP model
+crisp = LBPPIS( S, T, contacts, tests,qE,qI, alpha, beta, p0, p1, False)
+
+t = time.time()
+p = crisp.get_marginals(burnin = 25)
+print("LBP inference in {:.3}s".format(time.time()-t))
+print("infection stati:")
+for u,infs in enumerate(p[:,-1]):
+    print("{}: {}".format(u,infs))
+
+figure(figsize=(6,8))
+for i in range( min(5,S)):
+    subplot( min(5,S),1,i+1)
+    plot(p[i],'.-')
+    grid(True)
+suptitle("Inference with Loopy Belief Propagation")
 
 
 show()

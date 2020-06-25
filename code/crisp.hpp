@@ -142,7 +142,8 @@ public:
                     double alpha, double beta, double p0, double p1,
                     bool patientZero=false);
 
-    PopulationInfectionStatus( const PopulationInfectionStatus& other);
+    PopulationInfectionStatus( const PopulationInfectionStatus& other) = delete;
+    PopulationInfectionStatus & operator=(const PopulationInfectionStatus &) = delete;  
 
     // advance the whole model by one time step, adding new contacts and tests
     void advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool ignore_tests) {

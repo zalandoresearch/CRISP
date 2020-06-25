@@ -2,6 +2,7 @@
 #define F_GRAPH_HPP
 
 #include "node.hpp"
+#include "distribution.hpp"
 
 using namespace std;
 
@@ -9,6 +10,8 @@ class Node;
 
 
 class Factor {
+    Factor( const Factor &) = delete;
+
 public:
     vector<Node*> _nodes;
 
@@ -16,7 +19,6 @@ public:
 
 public:
     Factor( const vector<Node*> &nodes);
-    Factor( const Factor &other) :_nodes(other._nodes) {}
     virtual ~Factor() {}
 
     virtual MessagePtr message_to( Node *);
@@ -44,7 +46,7 @@ class SEIRFactor : public Factor {
     double _p0;
     double _p1;
 
-    static const vector<double> init_pi( const vector<double> q);
+    static const vector<double> init_pi( const Distribution &q);
 
     static vector<Node *> init_helper(SEIRNode &in, SEIRNode &out, vector<SEIRNode *> contacts );
 
@@ -54,11 +56,10 @@ class SEIRFactor : public Factor {
     const SEIRStateSpace &_states;
 
 public:
-    SEIRFactor( const Message &qE, const Message &qI,
+    SEIRFactor( const Distribution &qE, const Distribution &qI,
                 double p0, double p1, 
                 SEIRNode &in, SEIRNode &out, 
                 vector<SEIRNode *> contacts = vector<SEIRNode*>());
-    SEIRFactor( const SEIRFactor &other) : Factor(other), _piE( other._piE), _piI(other._piI), _p0(other._p0), _p1(other._p1), _states(other._states) {}
     virtual ~SEIRFactor(){}
     MessagePtr message_to( Node *);
 

@@ -28,7 +28,7 @@ Distribution::Distribution(const Distribution& d) {
 }
 
 // Constructs the distribution
-Distribution::Distribution(vector<double>& pdf) {
+Distribution::Distribution(const vector<double>& pdf) {
     _maxOutcomeValue = pdf.size()-1;
     _minOutcomeValue = -1;
     _logPdf = new double[_maxOutcomeValue+1];

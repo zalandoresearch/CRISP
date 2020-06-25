@@ -5,7 +5,7 @@ namespace py = pybind11;
 
 #include "crisp.hpp"
 #include "gibbs.hpp"
-
+#include "lbp.hpp"
 
 
 
@@ -39,7 +39,7 @@ PYBIND11_MODULE(crisp, m) {
             py::return_value_policy::copy);
 
 
-    py::class_<GibbsPopulationInfectionStatus>(m, "PopulationInfectionStatus")
+    py::class_<GibbsPopulationInfectionStatus>(m, "GibbsPIS")
         .def(py::init<int /*S*/,
                       int /*T*/,
                       const vector<ContactTuple>& /*contacts*/,
@@ -51,10 +51,10 @@ PYBIND11_MODULE(crisp, m) {
                       double /*p0*/,
                       double /*p1*/,
                       bool /*patientZero*/>())
-        .def(py::init<const GibbsPopulationInfectionStatus &>())
+        //.def(py::init<const GibbsPopulationInfectionStatus &>())
 
         .def("get_marginals", 
-            [] (GibbsPopulationInfectionStatus &g, int N, bool burnin, int skip) {
+            [] (GibbsPopulationInfectionStatus &g, int N, int burnin, int skip) {
                 return (py::array)py::cast(g.getMarginals(N, burnin, skip)); 
             },
             py::arg("N"), 
@@ -63,7 +63,7 @@ PYBIND11_MODULE(crisp, m) {
             py::return_value_policy::move)
         
         .def("sample", 
-            [] (GibbsPopulationInfectionStatus &g, int N, bool burnin, int skip) {
+            [] (GibbsPopulationInfectionStatus &g, int N, int burnin, int skip) {
                 return (py::array)py::cast(g.sample(N, burnin, skip)); 
             },
             py::arg("N"), 
@@ -72,7 +72,7 @@ PYBIND11_MODULE(crisp, m) {
             py::return_value_policy::move)
         
         .def("gibbs_sample", 
-            [] (GibbsPopulationInfectionStatus &g, int N, bool burnin, int skip) {
+            [] (GibbsPopulationInfectionStatus &g, int N, int burnin, int skip) {
                 return (py::array)py::cast(g.gibbsSample(N, burnin, skip)); 
             },
             py::arg("N"), 
@@ -101,11 +101,50 @@ PYBIND11_MODULE(crisp, m) {
             py::return_value_policy::move)
         
         .def("get_infection_status", 
-            [] (GibbsPopulationInfectionStatus &g, int N, bool burnin, int skip) {
+            [] (GibbsPopulationInfectionStatus &g, int N, int burnin, int skip) {
                 return (py::array)py::cast(g.getInfectionStatus(N, burnin, skip)); 
             },
             py::arg("N")=0, 
             py::arg("burnin")=0, 
             py::arg("skip")=0, 
             py::return_value_policy::move);
+
+    py::class_<LBPPopulationInfectionStatus>(m, "LBPPIS")
+        .def(py::init<int /*S*/,
+                      int /*T*/,
+                      const vector<ContactTuple>& /*contacts*/,
+                      const vector<OutcomeTuple>& /*outcomes*/,
+                      Distribution& /*qE*/,
+                      Distribution& /*qI*/,
+                      double /*alpha*/,
+                      double /*beta*/,
+                      double /*p0*/,
+                      double /*p1*/,
+                      bool /*patientZero*/>())
+        //.def(py::init<const LBPPopulationInfectionStatus &>())
+
+        .def("get_marginals", 
+            [] (LBPPopulationInfectionStatus &g, int N, int burnin, int skip) {
+                return (py::array)py::cast(g.getMarginals(N, burnin, skip)); 
+            },
+            py::arg("N")=1, 
+            py::arg("burnin")=0, 
+            py::arg("skip")=0, 
+            py::return_value_policy::move)
+        
+        .def("sample", 
+            [] (LBPPopulationInfectionStatus &g, int N, int burnin, int skip) {
+                return (py::array)py::cast(g.sample(N, burnin, skip)); 
+            },
+            py::arg("N")=1, 
+            py::arg("burnin")=0, 
+            py::arg("skip")=0, 
+            py::return_value_policy::move)
+                
+        .def("advance", 
+            &GibbsPopulationInfectionStatus::advance,
+            py::arg("contacts"), 
+            py::arg("outcomes"), 
+            py::arg("ignore_tests"));
+        
 }
