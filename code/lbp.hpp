@@ -19,6 +19,8 @@ class LBPPopulationInfectionStatus: public PopulationInfectionStatus {
 
     void propagate(int N);
 
+    bool _forward; // model is a forward message passing model
+
 protected:
     // advance the whole model by one time step, adding new contacts and tests
     virtual void _advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool ignore_tests, bool updatePrior);
@@ -28,6 +30,7 @@ public:
                 const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes,
                 Distribution& qE, Distribution& qI,
                 double alpha, double beta, double p0, double p1,
+                bool forward,
                 bool patientZero=false);
 
     virtual vector<vector<double>> getInfectionStatus(int N=0, int burnIn=0, int skip=0);

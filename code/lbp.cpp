@@ -7,10 +7,12 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
                 const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes,
                 Distribution& qE, Distribution& qI,
                 double alpha, double beta, double p0, double p1,
+                bool forward,
                 bool patientZero) :
     PopulationInfectionStatus( S, T, contacts, outcomes, qE, qI, alpha, beta, p0, p1, patientZero),
     _states(SEIRState::all_states( qE.getMaxOutcomeValue(), qI.getMaxOutcomeValue()) ),
-    _nodes( S)
+    _nodes( S),
+    _forward(forward)
 {
     for(int u=0; u<_noIndividuals; u++) 
         for( int t=0; t<_noTimeSteps; t++)
@@ -32,7 +34,10 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
                     contact_nodes.push_back(_nodes[v_][t_].get());
                 }
             }
-            _factors.emplace_back(new SEIRFactor(_qE, _qI, _p0, _p1, *_nodes[u][t-1], *_nodes[u][t], contact_nodes));
+            if(_forward)
+                _factors.emplace_back(new SEIRFactor(_qE, _qI, _p0, _p1, *_nodes[u][t-1], *_nodes[u][t], contact_nodes, {_nodes[u][t].get()}) );
+            else
+                _factors.emplace_back(new SEIRFactor(_qE, _qI, _p0, _p1, *_nodes[u][t-1], *_nodes[u][t], contact_nodes) );
 
             for(auto o = outcomes.begin(); o != outcomes.end();++o) {
                 Outcome outcome(*o);
@@ -68,8 +73,11 @@ void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts
                 contact_nodes.push_back(_nodes[v_][t_].get());
             }
         }
-        _factors.emplace_back(new SEIRFactor(_qE, _qI, _p0, _p1, *_nodes[u][t-1], *_nodes[u][t] , contact_nodes));
-
+            if(_forward)
+                _factors.emplace_back(new SEIRFactor(_qE, _qI, _p0, _p1, *_nodes[u][t-1], *_nodes[u][t], contact_nodes, {_nodes[u][t].get()}) );
+            else
+                _factors.emplace_back(new SEIRFactor(_qE, _qI, _p0, _p1, *_nodes[u][t-1], *_nodes[u][t], contact_nodes) );
+  
         // 3. add test outcome factors
         for(auto o = outcomes.begin(); o != outcomes.end();++o) {
             Outcome outcome(*o);

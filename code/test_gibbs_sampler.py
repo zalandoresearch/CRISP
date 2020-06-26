@@ -141,7 +141,7 @@ for i in range(Nsamp):
     ct = [c for c in contacts if c[2] == 0]
     tt = [o for o in tests if o[1] == 0]
 
-    crisp_fwd = GibbsPIS( S, 1, ct,tt, qE,qI, alpha, beta, p0, p1, True)
+    crisp_fwd = GibbsPIS( S, 1, ct,tt, qE,qI, alpha, beta, p0, p1, False)
     for t in range(1,T):
         ct = [c for c in contacts if c[2] == t]
         tt = [o for o in tests if o[1] == t]
@@ -182,7 +182,7 @@ suptitle("Gibbs sampling in iteratively built up CRISP")
 
 ##########################################################################################
 ### inference with the LBP model
-crisp = LBPPIS( S, T, contacts, tests,qE,qI, alpha, beta, p0, p1, False)
+crisp = LBPPIS( S, T, contacts, tests,qE,qI, alpha, beta, p0, p1, False, False)
 
 t = time.time()
 p = crisp.get_marginals(burnin = 25)
@@ -197,6 +197,24 @@ for i in range( min(5,S)):
     plot(p[i],'.-')
     grid(True)
 suptitle("Inference with Loopy Belief Propagation")
+
+##########################################################################################
+### inference with the LBP model
+crisp = LBPPIS( S, T, contacts, tests,qE,qI, alpha, beta, p0, p1,  True, False)
+
+t = time.time()
+p = crisp.get_marginals(burnin = 25)
+print("LBP inference in {:.3}s".format(time.time()-t))
+print("infection stati:")
+for u,infs in enumerate(p[:,-1]):
+    print("{}: {}".format(u,infs))
+
+figure(figsize=(6,8))
+for i in range( min(5,S)):
+    subplot( min(5,S),1,i+1)
+    plot(p[i],'.-')
+    grid(True)
+suptitle("Inference with forward message passing")
 
 
 show()

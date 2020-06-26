@@ -119,6 +119,7 @@ PYBIND11_MODULE(crisp, m) {
                       double /*beta*/,
                       double /*p0*/,
                       double /*p1*/,
+                      bool /* forward */, 
                       bool /*patientZero*/>())
 
         .def("get_marginals", 
