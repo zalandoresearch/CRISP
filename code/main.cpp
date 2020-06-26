@@ -118,9 +118,6 @@ small example of loopy BP, node D ends up with incorrect marginals
 void seir_state_test() {
 
 
-    SEIRNode node1( SEIRState::all_states( 10, 15)); 
-    SEIRNode node2( SEIRState::all_states( 10, 15)); 
-
     // !!! t=0 based !!!
     vector<double> qE = {0.0, 0.05908981283, 0.1656874653, 0.1819578343, 0.154807057,
                 0.1198776096, 0.08938884645, 0.06572939883, 0.04819654533,
@@ -142,10 +139,14 @@ void seir_state_test() {
     double alpha = 0.001;
     double beta = 0.01;
 
-    auto states = SEIRState::all_states( qE.size()-1, qI.size()-1);
+    SEIRStateSpace states( qE.size()-1, qI.size()-1);
     for( auto s: states)
         cout << s <<" ";
     cout << endl;
+
+    SEIRNode node1( states); 
+    SEIRNode node2( states); 
+
 
     unsigned int S = 3;
     unsigned int T = 30;

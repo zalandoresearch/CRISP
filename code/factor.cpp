@@ -133,7 +133,127 @@ const vector<double> SEIRFactor::init_pi( const Distribution &q) {
 }
 
 
+
+MessagePtr SEIRFactor::message_forward() {
+
+    VirusLoad load;
+    for( size_t i=2; i<_nodes.size(); i++) {
+        MessagePtr  contact_message = _nodes[i]->message_to(this);
+        double p = 0, p_tot = 0;
+        for( size_t i=0; i< contact_message->size(); i++) {
+            p_tot += (*contact_message)[i];
+            if( _states[i].phase() == SEIRState::I) 
+                p += (*contact_message)[i];
+        }
+        load.add_source( p/p_tot, 1.0);
+       }
+
+    MessagePtr output_message( new Message(_nodes[1]->size(), 0.0));
+    MessagePtr input_message = _nodes[0]->message_to(this);
+    
+    auto it_input_message = input_message->cbegin();
+    for( auto it_input_states = _states.cbegin(); it_input_states != _states.cend(); ++it_input_states) 
+    {
+        auto in = *it_input_states;
+        const double& in_value = *it_input_message;
+
+        switch( in.phase() ) {
+            case SEIRState::S: {
+                double p_keep = 0.0;
+                for( auto it_load = load.cbegin(); it_load != load.cend(); ++it_load) {
+                    p_keep += (it_load->second) * pow(1.0-_p1, it_load->first);
+                }
+                p_keep *= (1.0-_p0);
+                (*output_message)[_states[in.next(/*change = */ true)]] += in_value * (1.0 - p_keep);
+                (*output_message)[_states[in.next(/*change = */ false)]] += in_value * p_keep;
+            } break;
+            case SEIRState::E: {
+                (*output_message)[_states[in.next(/*change = */ true)]]  += in_value * _piE[in.days()];
+                (*output_message)[_states[in.next(/*change = */ false)]] += in_value * (1.0-_piE[in.days()]);
+
+            } break;
+            case SEIRState::I: {
+                (*output_message)[_states[in.next(/*change = */ true)]]  += in_value * _piI[in.days()];
+                (*output_message)[_states[in.next(/*change = */ false)]] += in_value * (1.0-_piI[in.days()]);
+            } break;
+            case SEIRState::R: {
+                (*output_message)[_states[in]] += in_value;
+            } break;
+        }
+        it_input_message++;
+    }
+    return output_message;
+}
+
+MessagePtr SEIRFactor::message_backward() {
+
+    VirusLoad load;
+    for( size_t i=2; i<_nodes.size(); i++) {
+        MessagePtr  contact_message = _nodes[i]->message_to(this);
+        double p = 0, p_tot = 0;
+        for( size_t i=0; i< contact_message->size(); i++) {
+            p_tot += (*contact_message)[i];
+            if( _states[i].phase() == SEIRState::I) 
+                p += (*contact_message)[i];
+        }
+        load.add_source( p/p_tot, 1.0);
+       }
+
+    MessagePtr input_message( new Message(_nodes[0]->size(), 0.0));
+    MessagePtr output_message = _nodes[1]->message_to(this);
+
+
+    double p_keep = 0.0;
+    for( auto it_load = load.cbegin(); it_load != load.cend(); ++it_load) {
+        p_keep += (it_load->second) * pow(1.0-_p1, it_load->first);
+    }
+    p_keep *= (1.0-_p0);
+
+    auto it_output_message = output_message->cbegin();
+    for( auto it_output_states = _states.cbegin(); it_output_states != _states.cend(); ++it_output_states) 
+    {
+        auto out = *it_output_states;
+        const double& out_value = *it_output_message;
+        int d = out.days();
+
+        switch( out.phase() ) {
+            case SEIRState::S: {
+                (*input_message)[_states[SEIRState(SEIRState::S)]] += out_value * (1.0 - p_keep);
+            } break;
+            case SEIRState::E: {
+                if( d>1) {
+                    (*input_message)[_states[SEIRState( SEIRState::E, d-1)]] += out_value * _piE[d-1];
+                }
+                else {
+                    (*input_message)[_states[SEIRState( SEIRState::S)]] += out_value * p_keep;
+                }
+            } break;
+            case SEIRState::I: {
+                if( d>1) {
+                    (*input_message)[_states[SEIRState( SEIRState::I, d-1)]] += out_value * _piI[d-1];
+                }
+                else {
+                    for( int dE=1; dE<=_states.dEMax; dE++)
+                        (*input_message)[_states[SEIRState( SEIRState::E,dE)]] += out_value * (1.0-_piE[d]);
+                }
+            } break;
+            case SEIRState::R: {
+                (*input_message)[_states[SEIRState( SEIRState::R)]] += 1.0;
+                for( int dI=1; dI<=_states.dIMax; dI++)
+                    (*input_message)[_states[SEIRState( SEIRState::I,dI)]] += out_value * (1.0-_piI[d]);
+            } break;
+        }
+        it_output_message++;
+    }
+    return input_message;
+}
+        
+
+
 MessagePtr SEIRFactor::message_horizontally( bool forward) {
+
+    if( forward) return message_forward();
+    else return message_backward();
 
     VirusLoad load;
     for( size_t i=2; i<_nodes.size(); i++) {

@@ -13,7 +13,7 @@ using namespace std;
 
 class LBPPopulationInfectionStatus: public PopulationInfectionStatus {
 
-    const SEIRStateSpace _states;
+    const SEIRStateSpace &_states;
     vector<vector< unique_ptr<SEIRNode>>> _nodes;
     vector<unique_ptr<Factor>> _factors;
 
@@ -32,7 +32,9 @@ public:
                 double alpha, double beta, double p0, double p1,
                 bool forward,
                 bool patientZero=false);
+    ~LBPPopulationInfectionStatus() { delete &_states;}
 
+    // get the posterior marginal distributions P(z_{u,T}|D_{contact}, D_{test})
     virtual vector<vector<double>> getInfectionStatus(int N=0, int burnIn=0, int skip=0);
 
     // get the posterior marginal distributions P(z_{u,t}|D_{contact}, D_{test})

@@ -6,10 +6,6 @@
 #include <map>
 using namespace std;
 
-class SEIRState;
-typedef vector<SEIRState> SEIRStateSpace;
-
-#include "node.hpp"
 
 
 
@@ -27,8 +23,6 @@ public:
     Phase phase() const { return _p;}
     int days() const { return _d;}
 
-    static SEIRStateSpace all_states( int dE, int dI);
-
 private:
     Phase _p;
     int _d;
@@ -37,9 +31,22 @@ private:
 
 ostream& operator<<(ostream& os, const SEIRState &s);
 
+class SEIRStateSpace: public vector<SEIRState> {
+    SEIRStateSpace( const SEIRStateSpace&) = delete; //avoid copying this object, one instance should always be sufficient
+
+    vector<SEIRState> _states;
+public:
+    const int dEMax;
+    const int dIMax;
+
+    SEIRStateSpace( int dE, int dI);
+    int operator[] (const SEIRState &s) const;
+    const SEIRState &operator[] (int i) const {return _states[i];};
+};
 
 
-Message basic_states( const Message &message, const SEIRStateSpace &states);
+
+
 
 
 

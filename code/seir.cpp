@@ -1,4 +1,5 @@
 #include"seir.hpp"
+#include "node.hpp"
 
 #include <vector>
 #include <iostream>
@@ -44,17 +45,24 @@ bool SEIRState::operator == (SEIRState::Phase other) const {
     return _p == other;
 }
 
-SEIRStateSpace SEIRState::all_states( int dE, int dI) {
+SEIRStateSpace::SEIRStateSpace( int dE, int dI) :
+    dEMax(dE), dIMax(dI)
+ {
 
-    SEIRStateSpace res;
-
-    res.push_back( SEIRState(S));
-    for( int d=1; d<=dE; res.push_back( SEIRState(E,d++)));
-    for( int d=1; d<=dI; res.push_back( SEIRState(I,d++)));
-    res.push_back( SEIRState(R));
-
-    return res;
+    _states.push_back( SEIRState::S);
+    for( int d=1; d<=dE; _states.push_back( SEIRState(SEIRState::E,d++)));
+    for( int d=1; d<=dI; _states.push_back( SEIRState(SEIRState::I,d++)));
+    _states.push_back( SEIRState::R);
 }
+
+int SEIRStateSpace::operator[] (const SEIRState &s) const {
+    for( int i=0; i<_states.size(); i++)
+        if(_states[i]==s)
+            return i;
+    assert(false); // state not found in state space
+    return -1;
+}
+
 
 ostream& operator<<(ostream& os, const SEIRState &s) {
     switch(s.phase()) {

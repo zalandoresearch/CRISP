@@ -10,7 +10,7 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
                 bool forward,
                 bool patientZero) :
     PopulationInfectionStatus( S, T, contacts, outcomes, qE, qI, alpha, beta, p0, p1, patientZero),
-    _states(SEIRState::all_states( qE.getMaxOutcomeValue(), qI.getMaxOutcomeValue()) ),
+    _states(* new SEIRStateSpace( qE.getMaxOutcomeValue(), qI.getMaxOutcomeValue()) ),
     _nodes( S),
     _forward(forward)
 {
@@ -49,6 +49,7 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
 
         }
     }    
+    propagate(1);
 }
 
 
@@ -86,13 +87,13 @@ void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts
             }
         }
 
+        _nodes[u][t]->update();
     }
 }
 
 
 void LBPPopulationInfectionStatus::propagate(int N) {
     
-    cerr << "burnin ("<< N << ")@ "<< this << endl;
     for( int n=0; n<N; n++) {
         for( int t=0; t<_noTimeSteps; t++)
             for( int u=0; u<_noIndividuals; u++) 
@@ -107,7 +108,6 @@ void LBPPopulationInfectionStatus::propagate(int N) {
 
 vector<vector<double>> LBPPopulationInfectionStatus::getInfectionStatus(int N, int burnIn, int skip) {
 
-    propagate(burnIn);
     vector<vector<double>> res(_noIndividuals, vector<double> (4));
     for( int u=0; u<_noIndividuals; u++)
         res[u] = normalize(basic_states(*_nodes[u][_noTimeSteps-1]->message_to(), _states));
@@ -118,8 +118,6 @@ vector<vector<double>> LBPPopulationInfectionStatus::getInfectionStatus(int N, i
 // get the posterior marginal distributions P(z_{u,t}|D_{contact}, D_{test})
 array3<double> LBPPopulationInfectionStatus::getMarginals(int N, int burnIn, int skip) {
 
-    cerr << "getMarginals( " << N << ", " << burnIn << ", " << skip << ")" << endl;
-    propagate(burnIn);
     array3<double> res(_noIndividuals, array2<double>( _noTimeSteps, array1<double>( 4, 0.0)));
     for( int u=0; u<_noIndividuals; u++)
         for(int t=0; t<_noTimeSteps; t++)   
@@ -132,7 +130,6 @@ array3<double> LBPPopulationInfectionStatus::getMarginals(int N, int burnIn, int
 // sample posterior mariginals $P_{u,t}(z_{u,t})$
 array3<int> LBPPopulationInfectionStatus::sample( int N, int burnIn, int skip) {
 
-    propagate(burnIn);
     array3<int> Z(N, array2<int>( _noIndividuals, array1<int>( _noTimeSteps, 0)));
     for( int u=0; u<_noIndividuals; u++)
         for(int t=0; t<_noTimeSteps; t++)
@@ -147,3 +144,4 @@ array3<int> LBPPopulationInfectionStatus::sample( int N, int burnIn, int skip) {
             }
     return Z;
 }       
+

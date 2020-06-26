@@ -140,8 +140,17 @@ PYBIND11_MODULE(crisp, m) {
             py::return_value_policy::move)
                 
         .def("advance", 
-            &GibbsPopulationInfectionStatus::advance,
+            &LBPPopulationInfectionStatus::advance,
             py::arg("contacts"), 
-            py::arg("outcomes"));
+            py::arg("outcomes") )
+            
+        .def("get_infection_status", 
+            [] (LBPPopulationInfectionStatus &g, int N, int burnin, int skip) {
+                return (py::array)py::cast(g.getInfectionStatus(N, burnin, skip)); 
+            },
+            py::arg("N")=0, 
+            py::arg("burnin")=0, 
+            py::arg("skip")=0, 
+            py::return_value_policy::move);
         
 }

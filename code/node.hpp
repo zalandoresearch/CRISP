@@ -3,15 +3,19 @@
 
 #include <memory>
 #include <iostream>
+#include <vector>
+
+#include "seir.hpp"
 
 using namespace std;
+
 
 typedef vector<double> Message;
 typedef shared_ptr<Message> MessagePtr;
 
-#include "seir.hpp"
 
 
+Message basic_states( const Message &message, const SEIRStateSpace &states);
 
 
 
@@ -53,7 +57,7 @@ public:
 class SEIRNode: public Node {
     const SEIRStateSpace &_states;
 public:
-    SEIRNode( const vector<SEIRState> &all_states);
+    SEIRNode( const SEIRStateSpace &all_states);
     const SEIRStateSpace& states() {return _states;};
 
 };
