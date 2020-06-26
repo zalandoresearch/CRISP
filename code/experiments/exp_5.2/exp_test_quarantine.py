@@ -49,7 +49,7 @@ class CRISP():
                                                  self.alpha, self.beta,
                                                  self.p0, self.p1, True)
         else:
-            self.pis.advance(contacts, [], ignore_tests=True)
+            self.pis.advance(contacts, [])
 
         self.P_zu = self.pis.get_infection_status()
         infectious_individuals = (self.P_zu[:,2]>0.999)
@@ -165,7 +165,7 @@ class PolicyEvaluator():
             self.write_csv_file(today_contacts, "contacts{}.csv".format(t))
 
             # ... (5) advance the world model by one step based on the new contacts
-            individuals_with_symptom_onset = self.crisp.advance(today_contacts)
+            individuals_with_symptom_onset = self.crisp.advance(today_contacts, [])
 
             # ... (6) compute the test outcomes of the test candidates based on the advanced world model
             today_test_outcomes = self.crisp.sample_test_outcomes(test_candidates)
@@ -396,7 +396,7 @@ class GibbsScoringPolicy(PolicyEvaluator):
                                                     self.crisp.alpha, self.crisp.beta,
                                                     self.crisp.p0*10, self.crisp.p1, False)
         else:
-            self.scorer.advance(new_contacts, new_test_outcomes, False)
+            self.scorer.advance(new_contacts, new_test_outcomes)
 
 def argument_parser() :
     # Create the parser

@@ -23,7 +23,7 @@ class LBPPopulationInfectionStatus: public PopulationInfectionStatus {
 
 protected:
     // advance the whole model by one time step, adding new contacts and tests
-    virtual void _advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool ignore_tests, bool updatePrior);
+    virtual void _advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool updatePrior);
 
 public:
     LBPPopulationInfectionStatus(int S, int T,

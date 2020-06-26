@@ -132,7 +132,7 @@ protected:
         int _maxInfectious;
 
     // advance the whole model by one time step, adding new contacts and tests
-    virtual void _advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool ignore_tests, bool updatePrior) = 0;
+    virtual void _advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool updatePrior) = 0;
 
 
 public:
@@ -146,8 +146,8 @@ public:
     PopulationInfectionStatus & operator=(const PopulationInfectionStatus &) = delete;  
 
     // advance the whole model by one time step, adding new contacts and tests
-    void advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool ignore_tests) {
-            return _advance(contacts, outcomes, ignore_tests, true);
+    void advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes) {
+            return _advance(contacts, outcomes, true);
     }
 
     // get the posterior marginal distributions P(z_{u,t}|D_{contact}, D_{test})

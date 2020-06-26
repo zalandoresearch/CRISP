@@ -81,7 +81,7 @@ class GibbsPopulationInfectionStatus : public PopulationInfectionStatus {
         void print(InfectionTrace z);
 
         // advance the whole model by one time step, adding new contacts and tests
-        void _advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool ignore_tests, bool updatePrior);
+        void _advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool updatePrior);
 
     public:
         // Initializes a population of S individuals over T time steps with contact and outcomes

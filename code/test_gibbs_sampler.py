@@ -141,11 +141,11 @@ for i in range(Nsamp):
     ct = [c for c in contacts if c[2] == 0]
     tt = [o for o in tests if o[1] == 0]
 
-    crisp_fwd = GibbsPIS( S, 1, ct,tt, qE,qI, alpha, beta, p0, p1, False)
+    crisp_fwd = GibbsPIS( S, 1, ct,tt, qE,qI, alpha, beta, p0, p1, True)
     for t in range(1,T):
         ct = [c for c in contacts if c[2] == t]
         tt = [o for o in tests if o[1] == t]
-        crisp_fwd.advance(ct, tt, ignore_tests=False)
+        crisp_fwd.advance(ct, tt)
     Z[i] = crisp_fwd.sample(N=1)
 print("generated {} forward samples in {:.3}s".format(Nsamp, time.time()-tm))
 print("infection stati:")

@@ -90,8 +90,7 @@ PYBIND11_MODULE(crisp, m) {
         .def("advance", 
             &GibbsPopulationInfectionStatus::advance,
             py::arg("contacts"), 
-            py::arg("outcomes"), 
-            py::arg("ignore_tests"))
+            py::arg("outcomes"))
         
         .def("get_individual_traces", 
             [] (const GibbsPopulationInfectionStatus &g) {
@@ -143,7 +142,6 @@ PYBIND11_MODULE(crisp, m) {
         .def("advance", 
             &GibbsPopulationInfectionStatus::advance,
             py::arg("contacts"), 
-            py::arg("outcomes"), 
-            py::arg("ignore_tests"));
+            py::arg("outcomes"));
         
 }

@@ -124,7 +124,7 @@ void GibbsPopulationInfectionStatus::print(InfectionTrace z) {
 }
 
 // advance the whole model by one time step, adding new contacts and tests
-void GibbsPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool ignore_tests, bool updatePrior) {
+void GibbsPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool updatePrior) {
     // 0. increase _noTimeSteps
     _noTimeSteps++;
     //int T=_noTimeSteps-1;
@@ -170,17 +170,6 @@ void GibbsPopulationInfectionStatus::_advance(const vector<ContactTuple>& contac
     uniform_real_distribution<> rng(0.0, 1.0);
     for(int u=0; u<_noIndividuals; ++u) {
         auto zu = _individualTrace[u];
-        bool tested = false;
-        TestOutcome o;
-        if(!ignore_tests) {
-            for(auto test: _outcomes[u]) {
-                if (test.getTime()==_noTimeSteps-1) {
-                    tested = true;
-                    o = test.getOutcome();
-                    break;
-                }
-            }
-        }
         double rnd =  rng(_gen);
         switch(zu[_noTimeSteps-2].phase()) {
             case SEIRState::S: {
@@ -198,13 +187,6 @@ void GibbsPopulationInfectionStatus::_advance(const vector<ContactTuple>& contac
                 int dE = zu.getDE();
                 // Compute g(u, t, Zut) using Equation (7) in paper
                 double pEE = 1.0-exp(_qE.getLogP(dE)-_qE.getLogPTail(dE));
-                // Adjust with probability of test outcome - see Equation (9) in paper
-                if(tested) {
-                    double pEI = 1.0 - pEE;
-                    pEE *= o==Positive ? _beta : (1.0-_beta);
-                    pEI *= o==Positive ? (1.0-_alpha) : _alpha;
-                    pEE /= (pEE+pEI);
-                }
                 // Transition from E to E with probability 1 - g(u, t, Zut), and from E to I with probability g(u, t, Zut) - see Equation (4) in paper
                 if (rnd<pEE){
                     zu.setDE(zu.getDE()+1);
@@ -217,12 +199,6 @@ void GibbsPopulationInfectionStatus::_advance(const vector<ContactTuple>& contac
                 int dI = zu.getDI();
                 // Compute h(u, t, Zut) using Equation (8) in paper
                 double pII = 1.0-exp(_qI.getLogP(dI)-_qI.getLogPTail(dI));
-                // Adjust with probability of test outcome - see Equation (9) in paper
-                if(tested) {
-                    double pIR = 1.0 - pII;
-                    pII *= o==Positive ? (1.0-_alpha) : _alpha;
-                    pIR *= o==Positive ? _beta : (1.0-_beta);
-                }
                 // Transition from I to I with probability 1 - h(u, t, Zut), and from I to R with probability h(u, t, Zut) - see Equation (4) in paper
                 if (rnd<pII){
                     zu.setDI(zu.getDI()+1);
@@ -257,7 +233,7 @@ GibbsPopulationInfectionStatus::GibbsPopulationInfectionStatus(int S, int T,
     }
 
     for(int t=1; t<T; ++t) {
-        _advance(contacts, outcomes, /*ignore_tests =*/ true, /*updatePrior =*/ false);
+        _advance(contacts, outcomes,  /*updatePrior =*/ false);
     }
     initPrior();
 }

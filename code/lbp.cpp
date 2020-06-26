@@ -52,7 +52,7 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
 }
 
 
-void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool ignore_tests, bool /* updatePrior */) {
+void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool /* updatePrior */) {
      
     // 0. increase _noTimeSteps
     _noTimeSteps++;
