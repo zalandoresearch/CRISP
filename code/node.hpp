@@ -58,10 +58,12 @@ public:
 
 class SEIRNode: public Node {
     const SEIRStateSpace &_states;
-public:
-    SEIRNode( const SEIRStateSpace &all_states);
-    const SEIRStateSpace& states() {return _states;};
 
+    double _p1;
+public:
+    SEIRNode( const SEIRStateSpace &all_states, double p1);
+    const SEIRStateSpace& states() {return _states;};
+    double infection_message_to( const Factor *f =0) const;
 };
 
 

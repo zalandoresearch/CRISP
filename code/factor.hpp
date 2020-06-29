@@ -21,7 +21,7 @@ public:
     Factor( const vector<Node*> &nodes, const vector<Node*> &child_nodes = vector<Node*>());
     virtual ~Factor() {}
 
-    virtual MessagePtr message_to( Node *);
+    virtual void message_to( Node *, MessagePtr to);
 };
 
 
@@ -48,10 +48,9 @@ class SEIRFactor : public Factor {
 
     static vector<Node *> init_helper(SEIRNode &in, SEIRNode &out, vector<SEIRNode *> contacts );
 
-    MessagePtr message_forward();
-    MessagePtr message_backward();
-    MessagePtr message_horizontally( bool forward);
-    MessagePtr message_vertical( Node *n);
+    void message_forward( MessagePtr to);
+    void message_backward( MessagePtr to);
+    void message_vertical( Node *n,  MessagePtr to);
 
     const SEIRStateSpace &_states;
 
@@ -62,7 +61,7 @@ public:
                 vector<SEIRNode *> contacts = vector<SEIRNode*>(),
                 const vector<Node*> &child_nodes = vector<Node*>());
     virtual ~SEIRFactor(){}
-    MessagePtr message_to( Node *);
+    void message_to( Node *, MessagePtr to);
 
     virtual double potential( const vector<unsigned int> &);
 
@@ -77,7 +76,7 @@ public:
     SEIRInitFactor( SEIRNode &in, bool patient_zero = false);
     virtual ~SEIRInitFactor(){}
     virtual double potential( const vector<unsigned int> &);
-    MessagePtr message_to( Node *);
+    void message_to( Node *, MessagePtr to);
 };
 
 

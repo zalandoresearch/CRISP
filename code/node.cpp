@@ -22,7 +22,7 @@ Message normalize(const Message &v_) {
     return v;
 }
 
-Node::Node( int N): _N(N),  _messages() {}
+Node::Node( int N): _N(N),  _messages()  {}
 
 
 void Node::update() {
@@ -30,7 +30,7 @@ void Node::update() {
     Message m_update( _N, 1.0);
 
     for( size_t i=0; i<_factors.size(); i++) {
-        _messages[i] = _factors[i]->message_to( this);
+        _factors[i]->message_to( this, _messages[i]);
         Node::message_counter++;
     }
 }
@@ -47,8 +47,27 @@ MessagePtr Node::message_to( const Factor *f) const {
 int Node::message_counter = 0;
 
 
-SEIRNode::SEIRNode( const SEIRStateSpace &all_states) :
-    Node(all_states.size()), _states( all_states) 
+SEIRNode::SEIRNode( const SEIRStateSpace &all_states, double p1) :
+    Node(all_states.size()), _states( all_states), _p1(p1)
 {
 }
 
+double SEIRNode::infection_message_to( const Factor *f) const {
+    
+    //return 1.0;
+    double p_I = 0.0;
+    double p_not_I = 0.0;
+
+    for( auto s: _states) {
+        double p_ = 1.0;
+        for( size_t i=0; i<_factors.size(); i++) 
+            if( _factors[i] != f) 
+                p_ *= (*_messages[i])[_states[s]];
+        
+        if( s.phase()==SEIRState::I)
+            p_I += p_;
+        else
+            p_not_I += p_;
+    }
+    return p_not_I + p_I*(1.0-_p1);
+}

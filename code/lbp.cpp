@@ -20,7 +20,7 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
 
     for(int u=0; u<_noIndividuals; u++) 
         for( int t=0; t<_noTimeSteps; t++)
-            _nodes[u].emplace_back( new SEIRNode(_states));
+            _nodes[u].emplace_back( new SEIRNode(_states,_p1));
 
     for( size_t u=0; u<_noIndividuals; u++) 
         _factors.emplace_back(new SEIRInitFactor(*_nodes[u][0],patientZero && u==0));
@@ -50,17 +50,9 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
 
         }
     }  
-    Node::message_counter = 0;
-    cerr << _factors.size() << " factors" << endl;
-    auto tic = chrono::steady_clock::now();
 
     propagate(2);
     
-    auto toc = chrono::steady_clock::now();
-    cerr << Node::message_counter << " messages in ";
-    double d = chrono::duration_cast<chrono::nanoseconds>(toc-tic).count();
-    d /= 1e9;
-    cerr << d << "s (" << (Node::message_counter/d) << " m/s)" << endl;
 
 }
 
@@ -74,7 +66,7 @@ void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts
     int t = _noTimeSteps-1;
     for( size_t u=0; u<_noIndividuals; u++) {
         // 1. append to all nodes
-        _nodes[u].emplace_back(new SEIRNode(_states));
+        _nodes[u].emplace_back(new SEIRNode(_states,_p1));
 
         // 2. add forward and contact factors
         vector<SEIRNode *> contact_nodes;
@@ -122,16 +114,37 @@ map< tuple<int,int>,  vector<int>> LBPPopulationInfectionStatus::_contact_helper
 
 
 void LBPPopulationInfectionStatus::propagate(int N) {
+
+    Node::message_counter = 0;
+    cerr << _factors.size() << " factors, N=" << N << endl;
+    auto tic = chrono::steady_clock::now();
+
     
     for( int n=0; n<N; n++) {
-        for( int t=0; t<_noTimeSteps; t++)
+        for( int t=0; t<_noTimeSteps; t++) {
             for( int u=0; u<_noIndividuals; u++) 
                 _nodes[u][t]->update();
-            
-        for( int t=_noTimeSteps-1; t>=0; t--)
+            cerr << n << ". " << t;
+            auto toc = chrono::steady_clock::now();
+            cerr << " " << Node::message_counter << " messages in ";
+            double d = chrono::duration_cast<chrono::nanoseconds>(toc-tic).count();
+            d /= 1e9;
+            cerr << " (" << (Node::message_counter/d) << " msg/s)" << endl;
+        }
+        for( int t=_noTimeSteps-1; t>=0; t--) {
             for( int u=_noIndividuals-1; u>=0; u--) 
                 _nodes[u][t]->update();
+            cerr << n << ". " << t;
+            auto toc = chrono::steady_clock::now();
+            cerr << " " << Node::message_counter << " messages in ";
+            double d = chrono::duration_cast<chrono::nanoseconds>(toc-tic).count();
+            d /= 1e9;
+            cerr << " (" << (Node::message_counter/d) << " msg/s)" << endl;
+        }
     }
+
+
+
 }
 
 

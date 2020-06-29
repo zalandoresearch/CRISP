@@ -144,8 +144,8 @@ void seir_state_test() {
         cout << s <<" ";
     cout << endl;
 
-    SEIRNode node1( states); 
-    SEIRNode node2( states); 
+    SEIRNode node1( states, p1); 
+    SEIRNode node2( states, p1); 
 
 
     unsigned int S = 3;
@@ -153,7 +153,7 @@ void seir_state_test() {
     vector<unique_ptr<SEIRNode>> nodes;//, SEIRNode(states));
     for( int u=0; u<S; u++)
         for( int t=0; t<T; t++)
-            nodes.emplace_back(new SEIRNode(states));
+            nodes.emplace_back(new SEIRNode(states, p1));
 
 
     vector<unique_ptr<Factor>> factors;
