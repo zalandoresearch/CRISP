@@ -235,7 +235,7 @@ int main() {
 
 
 /* ToDo:
-- strip inner loops of SEIRFactor::message_horizontally, and SEIRFactor::message_vertically 
+- strip inner loops of SEIRFactor::message_horizontally, and SEIRFactor::message_vertical 
 - make VirusLoad nicer, collecting the load distribution may need explicit scaling of the incoming factor
 - cleaup _states, make it global for all SEIRNodes
 - implement short_messages (aggregated over the four SEIR states )

@@ -50,6 +50,8 @@ public:
     void update();
 
     MessagePtr message_to(const Factor *f = 0) const;
+
+    static int message_counter;
 };
 
 

@@ -1,6 +1,6 @@
 #include "lbp.hpp"
 
-
+#include <chrono>
 
 
 LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
@@ -14,6 +14,10 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
     _nodes( S),
     _forward(forward)
 {
+    _factors.reserve(_noIndividuals*_noTimeSteps);
+
+    auto contact_map = _contact_helper(contacts);
+
     for(int u=0; u<_noIndividuals; u++) 
         for( int t=0; t<_noTimeSteps; t++)
             _nodes[u].emplace_back( new SEIRNode(_states));
@@ -25,13 +29,10 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
         for( size_t u=0; u<_noIndividuals; u++) {
 
             vector<SEIRNode *> contact_nodes;
-            for(auto c = contacts.begin(); c != contacts.end();++c) {
-                Contact contact(*c);
-                const int u_ = contact.getTargetIndividual();
-                const int v_ = contact.getSourceIndividual();
-                const int t_ = contact.getTime();
-                if(u_==u && t_==t-1) {
-                    contact_nodes.push_back(_nodes[v_][t_].get());
+            auto cmi = contact_map.find(make_tuple(u,t-1));
+            if (cmi != contact_map.end()) {
+                for( auto v:  cmi->second) {
+                    contact_nodes.push_back(_nodes[v][t-1].get());
                 }
             }
             if(_forward)
@@ -49,7 +50,18 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
 
         }
     }  
+    Node::message_counter = 0;
+    cerr << _factors.size() << " factors" << endl;
+    auto tic = chrono::steady_clock::now();
+
     propagate(2);
+    
+    auto toc = chrono::steady_clock::now();
+    cerr << Node::message_counter << " messages in ";
+    double d = chrono::duration_cast<chrono::nanoseconds>(toc-tic).count();
+    d /= 1e9;
+    cerr << d << "s (" << (Node::message_counter/d) << " m/s)" << endl;
+
 }
 
 
@@ -57,6 +69,7 @@ void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts
      
     // 0. increase _noTimeSteps
     _noTimeSteps++;
+    auto contact_map = _contact_helper(contacts);
 
     int t = _noTimeSteps-1;
     for( size_t u=0; u<_noIndividuals; u++) {
@@ -65,19 +78,16 @@ void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts
 
         // 2. add forward and contact factors
         vector<SEIRNode *> contact_nodes;
-        for(auto c = contacts.begin(); c != contacts.end();++c) {
-            Contact contact(*c);
-            const int u_ = contact.getTargetIndividual();
-            const int v_ = contact.getSourceIndividual();
-            const int t_ = contact.getTime();
-            if(u_==u && t_==t-1) {
-                contact_nodes.push_back(_nodes[v_][t_].get());
+        auto cmi = contact_map.find(make_tuple(u,t-1));
+        if (cmi != contact_map.end()) {
+            for( auto v:  cmi->second) {
+                contact_nodes.push_back(_nodes[v][t-1].get());
             }
         }
-            if(_forward)
-                _factors.emplace_back(new SEIRFactor(_qE, _qI, _p0, _p1, *_nodes[u][t-1], *_nodes[u][t], contact_nodes, {_nodes[u][t].get()}) );
-            else
-                _factors.emplace_back(new SEIRFactor(_qE, _qI, _p0, _p1, *_nodes[u][t-1], *_nodes[u][t], contact_nodes) );
+        if(_forward)
+            _factors.emplace_back(new SEIRFactor(_qE, _qI, _p0, _p1, *_nodes[u][t-1], *_nodes[u][t], contact_nodes, {_nodes[u][t].get()}) );
+        else
+            _factors.emplace_back(new SEIRFactor(_qE, _qI, _p0, _p1, *_nodes[u][t-1], *_nodes[u][t], contact_nodes) );
   
         // 3. add test outcome factors
         for(auto o = outcomes.begin(); o != outcomes.end();++o) {
@@ -90,6 +100,25 @@ void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts
         _nodes[u][t]->update();
     }
 }
+
+
+map< tuple<int,int>,  vector<int>> LBPPopulationInfectionStatus::_contact_helper(const vector<ContactTuple>& contacts) {
+
+    map< tuple<int,int>,  vector<int>> contact_map;
+
+    for(auto c = contacts.begin(); c != contacts.end();++c) {
+        Contact contact(*c);
+        const int u = contact.getTargetIndividual();
+        const int v = contact.getSourceIndividual();
+        const int t = contact.getTime();
+        auto x = contact.getCount(); // ToDo: unignore x
+
+        contact_map[ make_tuple(u,t)].push_back(v);
+    }
+
+    return contact_map;
+}
+
 
 
 void LBPPopulationInfectionStatus::propagate(int N) {

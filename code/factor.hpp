@@ -51,7 +51,7 @@ class SEIRFactor : public Factor {
     MessagePtr message_forward();
     MessagePtr message_backward();
     MessagePtr message_horizontally( bool forward);
-    MessagePtr message_vertically( Node *n);
+    MessagePtr message_vertical( Node *n);
 
     const SEIRStateSpace &_states;
 

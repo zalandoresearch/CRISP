@@ -31,6 +31,7 @@ void Node::update() {
 
     for( size_t i=0; i<_factors.size(); i++) {
         _messages[i] = _factors[i]->message_to( this);
+        Node::message_counter++;
     }
 }
 
@@ -43,6 +44,7 @@ MessagePtr Node::message_to( const Factor *f) const {
     return m;
 }
 
+int Node::message_counter = 0;
 
 
 SEIRNode::SEIRNode( const SEIRStateSpace &all_states) :
