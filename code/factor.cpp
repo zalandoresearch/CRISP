@@ -137,26 +137,10 @@ const vector<double> SEIRFactor::init_pi( const Distribution &q) {
 
 void SEIRFactor::message_forward( MessagePtr to) {
 
-    // VirusLoad load;
-    // for( size_t i=2; i<_nodes.size(); i++) {
-    //     MessagePtr  contact_message = _nodes[i]->message_to(this);
-    //     double p = 0, p_tot = 0;
-    //     for( size_t i=0; i< contact_message->size(); i++) {
-    //         p_tot += (*contact_message)[i];
-    //         if( _states[i].phase() == SEIRState::I) 
-    //             p += (*contact_message)[i];
-    //     }
-    //     load.add_source( p/p_tot, 1.0);
-    //    }
 
     MessagePtr output_message = to;
     MessagePtr input_message = _nodes[0]->message_to(this);
     
-    // double p_keep = 0.0;
-    // for( auto it_load = load.cbegin(); it_load != load.cend(); ++it_load) {
-    //     p_keep += (it_load->second) * pow(1.0-_p1, it_load->first);
-    // }
-    // p_keep *= (1.0-_p0);
 
     double p_keep = (1.0-_p0);
     for( size_t i=2; i<_nodes.size(); i++) {
@@ -195,27 +179,9 @@ void SEIRFactor::message_forward( MessagePtr to) {
 
 void SEIRFactor::message_backward( MessagePtr to) {
 
-    // VirusLoad load;
-    // for( size_t i=2; i<_nodes.size(); i++) {
-    //     MessagePtr  contact_message = _nodes[i]->message_to(this);
-    //     double p = 0, p_tot = 0;
-    //     for( size_t i=0; i< contact_message->size(); i++) {
-    //         p_tot += (*contact_message)[i];
-    //         if( _states[i].phase() == SEIRState::I) 
-    //             p += (*contact_message)[i];
-    //     }
-    //     load.add_source( p/p_tot, 1.0);
-    //    }
 
     MessagePtr input_message = to;
     MessagePtr output_message = _nodes[1]->message_to(this);
-
-
-    // double p_keep = 0.0;
-    // for( auto it_load = load.cbegin(); it_load != load.cend(); ++it_load) {
-    //     p_keep += (it_load->second) * pow(1.0-_p1, it_load->first);
-    // }
-    // p_keep *= (1.0-_p0);
 
 
     double p_keep = (1.0-_p0);
@@ -229,11 +195,6 @@ void SEIRFactor::message_backward( MessagePtr to) {
 
         switch( in.phase() ) {
             case SEIRState::S: {
-                // double p_keep = 0.0;
-                // for( auto it_load = load.cbegin(); it_load != load.cend(); ++it_load) {
-                //     p_keep += (it_load->second) * pow(1.0-_p1, it_load->first);
-                // }
-                // p_keep *= (1.0-_p0);
                 (*input_message)[_states[in]] += (*output_message)[_states[in.next(/*change = */ true)]] * (1.0 - p_keep);
                 (*input_message)[_states[in]] += (*output_message)[_states[in.next(/*change = */ false)]] * p_keep;
             } break;
@@ -258,20 +219,6 @@ void SEIRFactor::message_backward( MessagePtr to) {
 
 void SEIRFactor::message_vertical( Node *n, MessagePtr to) {
 
-    // VirusLoad load;
-    // for( size_t i=2; i<_nodes.size(); i++) {
-    //     if( _nodes[i] != n) {
-
-    //         MessagePtr  contact_message = _nodes[i]->message_to(this);
-    //         double p = 0, p_tot = 0;
-    //         for( size_t i=0; i< contact_message->size(); i++) {
-    //             p_tot += (*contact_message)[i];
-    //             if( _states[i].phase() == SEIRState::I) 
-    //                 p += (*contact_message)[i];
-    //         }
-    //         load.add_source( p/p_tot, 1.0);
-    //     }
-    // }
 
     auto input_message = _nodes[0]->message_to(this);
     auto output_message = _nodes[1]->message_to(this);
@@ -289,14 +236,7 @@ void SEIRFactor::message_vertical( Node *n, MessagePtr to) {
         switch( in.phase() ) {
             case SEIRState::S: {
                 for(int j=0; j<2; j++) {
-                    // double p_keep = 0.0;
-                    // for( auto it_load = load.cbegin(); it_load != load.cend(); ++it_load) {
-                    //     p_keep += (it_load->second) * pow(1.0-_p1, it_load->first + (double) j); 
-                    //                                                                     // ^^^
-                    //                                                                     // here is the load increase by the contact node
-                    // }
-                    // p_keep *= (1.0-_p0);
-                    double p_keep_ = p_keep * (j>0 ? (1.0-_p1) : 1);
+                   double p_keep_ = p_keep * (j>0 ? (1.0-_p1) : 1);
                     p_outgoing[j] += (*input_message)[_states[in]] * (*output_message)[_states[in.next(/*change = */ true)]] * (1.0 - p_keep_);
                     p_outgoing[j] += (*input_message)[_states[in]] * (*output_message)[_states[in.next(/*change = */ false)]] * p_keep_;
                 }

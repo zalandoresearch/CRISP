@@ -22,7 +22,7 @@ Message normalize(const Message &v_) {
     return v;
 }
 
-Node::Node( int N): _N(N),  _messages()  {}
+Node::Node( int N): _N(N),  _messages() {}
 
 
 void Node::update() {
