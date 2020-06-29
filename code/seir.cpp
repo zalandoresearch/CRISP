@@ -48,19 +48,30 @@ bool SEIRState::operator == (SEIRState::Phase other) const {
 SEIRStateSpace::SEIRStateSpace( int dE, int dI) :
     dEMax(dE), dIMax(dI)
  {
-
-    _states.push_back( SEIRState::S);
-    for( int d=1; d<=dE; _states.push_back( SEIRState(SEIRState::E,d++)));
-    for( int d=1; d<=dI; _states.push_back( SEIRState(SEIRState::I,d++)));
-    _states.push_back( SEIRState::R);
+    push_back( SEIRState::S);
+    for( int d=1; d<=dE; push_back( SEIRState(SEIRState::E,d++)));
+    for( int d=1; d<=dI; push_back( SEIRState(SEIRState::I,d++)));
+    push_back( SEIRState::R);
 }
 
 int SEIRStateSpace::operator[] (const SEIRState &s) const {
-    for( int i=0; i<_states.size(); i++)
-        if(_states[i]==s)
+
+    for( int i=0; i<size(); i++)
+        if(operator[](i)==s) 
             return i;
+    cerr << "invalid state " << s << endl;
     assert(false); // state not found in state space
     return -1;
+}
+
+
+bool SEIRStateSpace::can_continue( const SEIRState &s) const {  
+    switch( s.phase()) {
+        case SEIRState::S: return true;
+        case SEIRState::E: return s.days()<dEMax;
+        case SEIRState::I: return s.days()<dIMax;
+        case SEIRState::R: return true;
+    }
 }
 
 

@@ -77,6 +77,8 @@ public:
     SEIRInitFactor( SEIRNode &in, bool patient_zero = false);
     virtual ~SEIRInitFactor(){}
     virtual double potential( const vector<unsigned int> &);
+    MessagePtr message_to( Node *);
+
 };
 
 

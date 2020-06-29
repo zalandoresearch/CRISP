@@ -33,6 +33,8 @@ Factor::Factor( const vector<Node*> &nodes, const vector<Node*> &child_nodes) :
 
 MessagePtr Factor::message_to( Node* n) {
 
+    cerr << this << " Factor::message_to( Node *n=" << n << ")" << endl;
+
     size_t i_node = 0; 
     for( ; i_node<_nodes.size() && _nodes[i_node]!=n; i_node++){
     }
@@ -60,6 +62,7 @@ MessagePtr Factor::message_to( Node* n) {
                 p *= *(msg_its[i]);
             }
         }
+        cerr << state_its << " p=" << p << endl;
         double upd = p * potential( state_its);
         // cout << *(out_msg_it) << " " << upd << " "<< p << " " << endl;
         *(out_msg_it) += upd;
@@ -85,6 +88,7 @@ MessagePtr Factor::message_to( Node* n) {
     } 
     done:
 
+    cerr << this << " Factor::message_to( Node *n=" << n << ") = " << outgoing_message <<  endl;
     return outgoing_message;
 }
 
@@ -169,12 +173,14 @@ MessagePtr SEIRFactor::message_forward() {
             } break;
             case SEIRState::E: {
                 (*output_message)[_states[in.next(/*change = */ true)]]  += in_value * _piE[in.days()];
-                (*output_message)[_states[in.next(/*change = */ false)]] += in_value * (1.0-_piE[in.days()]);
+                if( _states.can_continue(in))   
+                    (*output_message)[_states[in.next(/*change = */ false)]] += in_value * (1.0-_piE[in.days()]);
 
             } break;
             case SEIRState::I: {
                 (*output_message)[_states[in.next(/*change = */ true)]]  += in_value * _piI[in.days()];
-                (*output_message)[_states[in.next(/*change = */ false)]] += in_value * (1.0-_piI[in.days()]);
+                if( _states.can_continue(in))   
+                    (*output_message)[_states[in.next(/*change = */ false)]] += in_value * (1.0-_piI[in.days()]);
             } break;
             case SEIRState::R: {
                 (*output_message)[_states[in]] += in_value;
@@ -471,16 +477,19 @@ SEIRInitFactor::SEIRInitFactor( SEIRNode &out, bool patient_zero) :
 
 double SEIRInitFactor::potential( const vector<unsigned int> &state_its) {
 
-    assert(state_its.size()==1);
-
-    SEIRState out = _states[state_its[0]];
-
-    if( _patient_zero) 
-        return out == SEIRState(SEIRState::E,1) ? 1.0 : 0.0;
-    else 
-        return out == SEIRState(SEIRState::S) ? 1.0 : 0.0;
+     assert(false); // SEIRInitFactor implements its own message_to() method
 }
 
+MessagePtr SEIRInitFactor::message_to( Node *n) {
+
+    MessagePtr message( new Message(n->size(), 0.0));
+    if( _patient_zero)
+        (*message)[_states[SEIRState(SEIRState::E,1)]] = 1.0;
+    else
+        (*message)[_states[SEIRState(SEIRState::S)]] = 1.0;
+    
+    return message;
+}
 
 SEIRTestFactor::SEIRTestFactor( SEIRNode &out, bool positive, double alpha, double beta) :
     Factor({&out}), _states(out.states())

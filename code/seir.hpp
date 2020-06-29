@@ -34,14 +34,17 @@ ostream& operator<<(ostream& os, const SEIRState &s);
 class SEIRStateSpace: public vector<SEIRState> {
     SEIRStateSpace( const SEIRStateSpace&) = delete; //avoid copying this object, one instance should always be sufficient
 
-    vector<SEIRState> _states;
+    //friend class LBPPopulationInfectionStatus;
+    //vector<SEIRState> _states;
 public:
     const int dEMax;
     const int dIMax;
 
     SEIRStateSpace( int dE, int dI);
     int operator[] (const SEIRState &s) const;
-    const SEIRState &operator[] (int i) const {return _states[i];};
+    const SEIRState &operator[] (int i) const {return vector<SEIRState>::operator[] (i);};
+
+    bool can_continue( const SEIRState &s) const;
 };
 
 

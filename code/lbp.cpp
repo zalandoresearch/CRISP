@@ -20,6 +20,7 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
 
     for( size_t u=0; u<_noIndividuals; u++) 
         _factors.emplace_back(new SEIRInitFactor(*_nodes[u][0],patientZero && u==0));
+    
 
     for( size_t t=1; t<_noTimeSteps; t++) {
         for( size_t u=0; u<_noIndividuals; u++) {
@@ -48,8 +49,8 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
 
 
         }
-    }    
-    propagate(1);
+    }  
+    propagate(2);
 }
 
 
@@ -96,12 +97,14 @@ void LBPPopulationInfectionStatus::propagate(int N) {
     
     for( int n=0; n<N; n++) {
         for( int t=0; t<_noTimeSteps; t++)
-            for( int u=0; u<_noIndividuals; u++) 
+            for( int u=0; u<_noIndividuals; u++) {
                 _nodes[u][t]->update();
+            }
             
         for( int t=_noTimeSteps-1; t>=0; t--)
-            for( int u=_noIndividuals-1; u>=0; u--)
+            for( int u=_noIndividuals-1; u>=0; u--) {
                 _nodes[u][t]->update();
+            }
     }
 }
 
