@@ -33,8 +33,6 @@ Factor::Factor( const vector<Node*> &nodes, const vector<Node*> &child_nodes) :
 
 MessagePtr Factor::message_to( Node* n) {
 
-    cerr << this << " Factor::message_to( Node *n=" << n << ")" << endl;
-
     size_t i_node = 0; 
     for( ; i_node<_nodes.size() && _nodes[i_node]!=n; i_node++){
     }
@@ -62,7 +60,6 @@ MessagePtr Factor::message_to( Node* n) {
                 p *= *(msg_its[i]);
             }
         }
-        cerr << state_its << " p=" << p << endl;
         double upd = p * potential( state_its);
         // cout << *(out_msg_it) << " " << upd << " "<< p << " " << endl;
         *(out_msg_it) += upd;
@@ -88,7 +85,6 @@ MessagePtr Factor::message_to( Node* n) {
     } 
     done:
 
-    cerr << this << " Factor::message_to( Node *n=" << n << ") = " << outgoing_message <<  endl;
     return outgoing_message;
 }
 
@@ -255,104 +251,6 @@ MessagePtr SEIRFactor::message_backward() {
 }
         
 
-
-MessagePtr SEIRFactor::message_horizontally( bool forward) {
-
-    if( forward) return message_forward();
-    else return message_backward();
-
-    VirusLoad load;
-    for( size_t i=2; i<_nodes.size(); i++) {
-        MessagePtr  contact_message = _nodes[i]->message_to(this);
-        double p = 0, p_tot = 0;
-        for( size_t i=0; i< contact_message->size(); i++) {
-            p_tot += (*contact_message)[i];
-            if( _states[i].phase() == SEIRState::I) 
-                p += (*contact_message)[i];
-        }
-        load.add_source( p/p_tot, 1.0);
-       }
-
-    MessagePtr outgoing_message( new Message(_nodes[ forward ? 1 : 0]->size(), 0.0));
-
-    MessagePtr input_message;
-    MessagePtr output_message;
-    if( forward) {
-        input_message = _nodes[0]->message_to(this);
-        output_message = outgoing_message;
-    }
-    else {
-        input_message = outgoing_message;
-        output_message = _nodes[1]->message_to(this);
-    }
-
-    Message::const_iterator it_input_message;
-    Message::const_iterator it_output_message;
-
-    it_input_message = input_message->begin();
-    for( auto it_input_states = _states.cbegin(); it_input_states != _states.cend(); ++it_input_states) 
-    {
-        auto in = *it_input_states;
-
-        it_output_message = output_message->begin();
-        for( auto it_output_states = _states.cbegin(); it_output_states != _states.cend(); ++it_output_states) 
-        {
-            auto out = *it_output_states;
-
-            const double& in_value = *(forward ? it_input_message : it_output_message);
-            double &out_value = const_cast<double &>(*(forward ? it_output_message : it_input_message));
-    
-            switch( in.phase() ) {
-                case SEIRState::S: {
-                    double p_keep = 0.0;
-                    for( auto it_load = load.cbegin(); it_load != load.cend(); ++it_load) {
-                        p_keep += (it_load->second) * pow(1.0-_p1, it_load->first);
-                    }
-                    p_keep *= (1.0-_p0);
-                    if( in.next(/*change = */ true)  == out) {
-                        out_value += in_value * (1.0 - p_keep);
-                        //cerr << in << "," << out << "=" << in_value <<", "<<out_value<<endl;
-                        }
-                    if( in.next(/*change = */ false) == out) {
-                        out_value += in_value * p_keep;
-                        //cerr << in << "," << out << "=" << in_value <<", "<<out_value<<endl;
-                        }
-                } break;
-                case SEIRState::E: {
-                    if( in.next(/*change = */ true)  == out) {
-                        out_value += in_value * _piE[in.days()];
-                        //cerr << in << "," << out << "=" << in_value <<", "<<out_value<<endl;
-                        }
-                    if( in.next(/*change = */ false) == out) {
-                        out_value += in_value * (1.0-_piE[in.days()]);
-                        //cerr << in << "," << out << "=" << in_value <<", "<<out_value<<endl;
-                        }
-
-                } break;
-                case SEIRState::I: {
-                    if( in.next(/*change = */ true)  == out) {
-                        out_value += in_value * _piI[in.days()];
-                        //cerr << in << "," << out << "=" << in_value <<", "<<out_value<<endl;
-                        }
-                    if( in.next(/*change = */ false) == out) {
-                        out_value += in_value * (1.0-_piI[in.days()]);
-                        //cerr << in << "," << out << "=" << in_value <<", "<<out_value<<endl;
-                        }
-                } break;
-                case SEIRState::R: {
-                    out_value += in_value * (out.phase()==SEIRState::R ? 1.0 : 0.0);
-                } break;
-            }
-            ++it_output_message;
-        }
-        ++it_input_message;
-    }
-    // cerr << "input_message" << &(*input_message) << endl;
-    //cerr << "outgoing_message" << *outgoing_message << endl;
-    return outgoing_message;
-}
-
-
 MessagePtr SEIRFactor::message_vertically( Node *n) {
 
     VirusLoad load;
@@ -458,8 +356,8 @@ MessagePtr SEIRFactor::message_vertically( Node *n) {
 
 MessagePtr SEIRFactor::message_to( Node *n) {
 
-    if( n==_nodes[0]) return message_horizontally( /*forward =*/ false);
-    if( n==_nodes[1]) return message_horizontally( /*forward =*/ true);
+    if( n==_nodes[0]) return message_backward();
+    if( n==_nodes[1]) return message_forward();
     return message_vertically( n);
 }
 

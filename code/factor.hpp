@@ -78,7 +78,6 @@ public:
     virtual ~SEIRInitFactor(){}
     virtual double potential( const vector<unsigned int> &);
     MessagePtr message_to( Node *);
-
 };
 
 

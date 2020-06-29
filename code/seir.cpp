@@ -55,13 +55,12 @@ SEIRStateSpace::SEIRStateSpace( int dE, int dI) :
 }
 
 int SEIRStateSpace::operator[] (const SEIRState &s) const {
-
-    for( int i=0; i<size(); i++)
-        if(operator[](i)==s) 
-            return i;
-    cerr << "invalid state " << s << endl;
-    assert(false); // state not found in state space
-    return -1;
+    switch( s.phase()) {
+        case SEIRState::S: return 0;
+        case SEIRState::E: return s.days();
+        case SEIRState::I: return s.days()+dEMax;
+        case SEIRState::R: return 1+dEMax+dIMax;
+    }
 }
 
 

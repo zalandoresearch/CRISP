@@ -33,9 +33,7 @@ ostream& operator<<(ostream& os, const SEIRState &s);
 
 class SEIRStateSpace: public vector<SEIRState> {
     SEIRStateSpace( const SEIRStateSpace&) = delete; //avoid copying this object, one instance should always be sufficient
-
-    //friend class LBPPopulationInfectionStatus;
-    //vector<SEIRState> _states;
+ 
 public:
     const int dEMax;
     const int dIMax;
