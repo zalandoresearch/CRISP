@@ -18,14 +18,16 @@ Factor::Factor( const vector<Node*> &nodes, const vector<Node*> &child_nodes) :
 {
     if( child_nodes.size()>0) {
         for( auto n: child_nodes) {
-            n->_factors.push_back(this);
-            n->_messages.emplace_back( new Message(n->_N, 1.0) );
+            n->add_factor(this);
+            // n->_factors.push_back(this);
+            // n->_messages.emplace_back( new Message(n->_N, 1.0) );
         }
     }
     else {
         for( auto n: _nodes) {
-            n->_factors.push_back(this);
-            n->_messages.emplace_back( new Message(n->_N, 1.0) );
+            n->add_factor(this);
+            // n->_factors.push_back(this);
+            // n->_messages.emplace_back( new Message(n->_N, 1.0) );
         }
     }
 }
@@ -144,7 +146,8 @@ void SEIRFactor::message_forward( MessagePtr to) {
 
     double p_keep = (1.0-_p0);
     for( size_t i=2; i<_nodes.size(); i++) {
-        p_keep *= ((SEIRNode*)_nodes[i])->infection_message_to(this);
+        auto m = ((SEIRNode*)_nodes[i])->infection_message_to(this);
+        p_keep *= m->at(0) + (1-_p1) * m->at(1);
     }
 
     auto it_input_message = input_message->cbegin();
@@ -186,7 +189,8 @@ void SEIRFactor::message_backward( MessagePtr to) {
 
     double p_keep = (1.0-_p0);
     for( size_t i=2; i<_nodes.size(); i++) {
-        p_keep *= ((SEIRNode*)_nodes[i])->infection_message_to(this);
+        auto m = ((SEIRNode*)_nodes[i])->infection_message_to(this);
+        p_keep *= m->at(0) + (1-_p1) * m->at(1);
     }
 
     for( auto it_input_states = _states.cbegin(); it_input_states != _states.cend(); ++it_input_states) 
@@ -224,9 +228,11 @@ void SEIRFactor::message_vertical( Node *n, MessagePtr to) {
     auto output_message = _nodes[1]->message_to(this);
 
     double p_keep = (1.0-_p0);
-    cerr << _nodes.size() << " nodes" << endl;
     for( size_t i=2; i<_nodes.size(); i++) {
-        p_keep *= ((SEIRNode*)_nodes[i])->infection_message_to(this);
+        if( _nodes[i] != n) {
+            auto m = ((SEIRNode*)_nodes[i])->infection_message_to(this);
+            p_keep *= m->at(0) + (1-_p1) * m->at(1);
+        }
     }
 
     Message p_outgoing(2, 0.0);

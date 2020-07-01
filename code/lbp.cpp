@@ -151,8 +151,10 @@ void LBPPopulationInfectionStatus::propagate(int N) {
 vector<vector<double>> LBPPopulationInfectionStatus::getInfectionStatus(int N, int burnIn, int skip) {
 
     vector<vector<double>> res(_noIndividuals, vector<double> (4));
-    for( int u=0; u<_noIndividuals; u++)
-        res[u] = normalize(basic_states(*_nodes[u][_noTimeSteps-1]->message_to(), _states));
+    for( int u=0; u<_noIndividuals; u++) {
+        res[u] = basic_states(*_nodes[u][_noTimeSteps-1]->message_to(), _states);
+        normalize(res[u]);
+    }
 
     return res;
 }
@@ -162,8 +164,10 @@ array3<double> LBPPopulationInfectionStatus::getMarginals(int N, int burnIn, int
 
     array3<double> res(_noIndividuals, array2<double>( _noTimeSteps, array1<double>( 4, 0.0)));
     for( int u=0; u<_noIndividuals; u++)
-        for(int t=0; t<_noTimeSteps; t++)   
-            res[u][t] = normalize(basic_states(*_nodes[u][t]->message_to(), _states));
+        for(int t=0; t<_noTimeSteps; t++) {  
+            res[u][t] = basic_states(*_nodes[u][t]->message_to(), _states);
+            normalize(res[u][t]);
+        }
 
     return res;
 

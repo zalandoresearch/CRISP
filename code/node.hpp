@@ -27,14 +27,14 @@ ostream& operator<<(ostream& os, const vector<T> &v) {
     return os;
 }
 
-vector<double> normalize(const vector<double> &v_);
+//vector<double> normalize(const vector<double> &v_);
+Message & normalize( Message &v_);
+Message normalize( const Message &v_);
 
 
 class Factor;
 
 class Node {
-    friend class Factor;
-
     Node( const Node &other) = delete;
     
 public:
@@ -43,11 +43,14 @@ public:
 public:
     int _N;                              // length of message as discrete distribution
     vector<MessagePtr> _messages;        // local message used for loopy belief propagation
-   
+    Message _marginal;
+
 public:
     Node( int N);
+    virtual void add_factor( Factor* f);
+
     int size() const {return _N;};
-    void update();
+    virtual void update();
 
     MessagePtr message_to(const Factor *f = 0) const;
 
@@ -60,10 +63,17 @@ class SEIRNode: public Node {
     const SEIRStateSpace &_states;
 
     double _p1;
+
+    vector<MessagePtr> _z_messages;       
+    Message _z_marginal;
+
 public:
     SEIRNode( const SEIRStateSpace &all_states, double p1);
+    virtual void add_factor( Factor* f);
+    virtual void update();
+
     const SEIRStateSpace& states() {return _states;};
-    double infection_message_to( const Factor *f =0) const;
+    MessagePtr infection_message_to( const Factor *f =0) const;
 };
 
 
