@@ -118,8 +118,21 @@ PYBIND11_MODULE(crisp, m) {
                       double /*beta*/,
                       double /*p0*/,
                       double /*p1*/,
-                      bool /* forward */, 
                       bool /*patientZero*/>())
+        .def("propagate",
+             [] (LBPPopulationInfectionStatus &g, int N, std::string pt) {
+                static const std::map<std::string, LBPPopulationInfectionStatus::PropType> option_strings {
+                        { "full",       LBPPopulationInfectionStatus::full },
+                        { "forward",    LBPPopulationInfectionStatus::forward },
+                        { "baum_welch", LBPPopulationInfectionStatus::baum_welch },
+                };                 
+                return g.propagate(N, option_strings.at(pt));
+            },
+            py::arg("N"),
+            py::arg("prop_type")="full")
+
+        .def("reset",
+            &LBPPopulationInfectionStatus::reset)
 
         .def("get_marginals", 
             [] (LBPPopulationInfectionStatus &g, int N, int burnin, int skip) {

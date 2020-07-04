@@ -51,6 +51,7 @@ public:
 
     int size() const {return _N;};
     virtual void update();
+    virtual void reset();
 
     MessagePtr message_to(const Factor *f = 0) const;
 
@@ -64,13 +65,15 @@ class SEIRNode: public Node {
 
     double _p1;
 
-    vector<MessagePtr> _z_messages;       
-    Message _z_marginal;
+    // to be reintroduced at a later time
+    // vector<MessagePtr> _z_messages;       
+    // Message _z_marginal;
 
 public:
+    enum Update { forward, backward, full };
     SEIRNode( const SEIRStateSpace &all_states, double p1);
     virtual void add_factor( Factor* f);
-    virtual void update();
+    virtual void update( Update upd = full);
 
     const SEIRStateSpace& states() {return _states;};
     MessagePtr infection_message_to( const Factor *f =0) const;

@@ -7,9 +7,28 @@
 
 #include <vector>
 #include <memory>
-#include <map>
+#include <unordered_map>
 
 using namespace std;
+
+namespace std {
+
+  template <>
+  struct hash<tuple<int,int>>
+  {
+    std::size_t operator()(const tuple<int,int>& k) const
+    {
+      using std::size_t;
+      using std::hash;
+
+      // Compute individual hash values for first,
+      // second and third and combine them using XOR
+      // and bit shifting:
+
+      return ( (hash<int>()(get<0>(k)) ^ (hash<int>()(get<1>(k)) << 1)) );
+    }
+  };
+}
 
 
 class LBPPopulationInfectionStatus: public PopulationInfectionStatus {
@@ -18,7 +37,6 @@ class LBPPopulationInfectionStatus: public PopulationInfectionStatus {
     vector<vector< unique_ptr<SEIRNode>>> _nodes;
     vector<unique_ptr<Factor>> _factors;
 
-    void propagate(int N);
 
     bool _forward; // model is a forward message passing model
 
@@ -26,7 +44,7 @@ protected:
     // advance the whole model by one time step, adding new contacts and tests
     virtual void _advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool updatePrior);
 
-    map< tuple<int,int>, vector<int>> _contact_helper(const vector<ContactTuple>& contacts);
+    unordered_map< tuple<int,int>, vector<int>> _contact_helper(const vector<ContactTuple>& contacts);
 
 public:
     LBPPopulationInfectionStatus(int S, int T,
@@ -36,6 +54,12 @@ public:
                 bool forward,
                 bool patientZero=false);
     ~LBPPopulationInfectionStatus() { delete &_states;}
+
+    enum PropType { forward, baum_welch, full};
+
+    void propagate(int N, PropType prop_type = full);
+
+    void reset();
 
     // get the posterior marginal distributions P(z_{u,T}|D_{contact}, D_{test})
     virtual vector<vector<double>> getInfectionStatus(int N=0, int burnIn=0, int skip=0);

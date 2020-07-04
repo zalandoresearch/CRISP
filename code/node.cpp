@@ -47,13 +47,16 @@ Node::Node( int N): _N(N),  _messages() , _marginal(N,1.0) {}
 
 void Node::add_factor( Factor* f) {
     _factors.push_back(f);
-    _messages.emplace_back( new Message(_N, 1.0) );
+    _messages.emplace_back(nullptr );
 }
 
 
 void Node::update() {
 
     for( size_t i=0; i<_factors.size(); i++) {
+        if(!_messages[i])
+            _messages[i] = MessagePtr(new Message(_N, 1.0)); 
+
         _marginal /= *(_messages[i]);
         _factors[i]->message_to( this, _messages[i]);
         _marginal *= *(_messages[i]);
@@ -61,12 +64,19 @@ void Node::update() {
     }
 }
 
+void Node::reset() {
+    fill(_marginal.begin(), _marginal.end(), 1.0);
+    for( auto m: _messages) 
+        if (m != nullptr)
+            fill(m->begin(), m->end(), 1.0);
+}
 
 MessagePtr Node::message_to( const Factor *f) const {
     MessagePtr m(new Message(_marginal));
     for( size_t i=0; i<_factors.size(); i++) {
         if( _factors[i] == f)
-           (*m) /= (*_messages[i]);
+            if( _messages[i]!=nullptr)
+               (*m) /= (*_messages[i]);
     }
     normalize(*m);
     return m;
@@ -78,8 +88,8 @@ int Node::message_counter = 0;
 SEIRNode::SEIRNode( const SEIRStateSpace &all_states, double p1) :
     Node(all_states.size()), 
     _states( all_states), 
-    _z_messages(), 
-    _z_marginal(2),
+    // _z_messages(), 
+    // _z_marginal(2),
     _p1(p1)
 {
 }
@@ -87,27 +97,34 @@ SEIRNode::SEIRNode( const SEIRStateSpace &all_states, double p1) :
 
 void SEIRNode::add_factor( Factor* f) {
     Node::add_factor(f);
-    _z_messages.emplace_back( new Message(2, 1.0) );
+    // _z_messages.emplace_back( nullptr );
 }
 
 
-void SEIRNode::update() {
+void SEIRNode::update( Update upd) {
 
     for( size_t i=0; i<_factors.size(); i++) {
+        if (auto f = dynamic_cast<SEIRFactor*>(_factors[i])) {
+            if( upd == forward && f->_nodes[1] != this) continue;
+            if( upd == backward && f->_nodes[0] != this) continue;
+        }
+        if(!_messages[i])
+            _messages[i] = MessagePtr(new Message(_N, 1.0)); 
+
         _marginal /= *(_messages[i]);
         _factors[i]->message_to( this, _messages[i]);
         _marginal *= *(_messages[i]);
 
-        _z_marginal /= *(_z_messages[i]);
-        fill( _z_messages[i]->begin(), _z_messages[i]->end(), 0.0);
-        for( auto s: _states) {
-            int j = _states[s];
-            if( s.phase()==SEIRState::I)
-                (*_z_messages[i])[1] += (*_messages[i])[j];  
-            else
-                (*_z_messages[i])[0] += (*_messages[i])[j];  
-        }
-        _z_marginal *= *(_z_messages[i]);
+        // _z_marginal /= *(_z_messages[i]);
+        // fill( _z_messages[i]->begin(), _z_messages[i]->end(), 0.0);
+        // for( auto s: _states) {
+        //     int j = _states[s];
+        //     if( s.phase()==SEIRState::I)
+        //         (*_z_messages[i])[1] += (*_messages[i])[j];  
+        //     else
+        //         (*_z_messages[i])[0] += (*_messages[i])[j];  
+        // }
+        // _z_marginal *= *(_z_messages[i]);
 
 
         Node::message_counter++;

@@ -2,7 +2,6 @@
 
 #include <chrono>
 
-
 LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
                 const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes,
                 Distribution& qE, Distribution& qI,
@@ -11,8 +10,7 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
                 bool patientZero) :
     PopulationInfectionStatus( S, T, contacts, outcomes, qE, qI, alpha, beta, p0, p1, patientZero),
     _states(* new SEIRStateSpace( qE.getMaxOutcomeValue(), qI.getMaxOutcomeValue()) ),
-    _nodes( S),
-    _forward(forward)
+    _nodes( S)
 {
     _factors.reserve(_noIndividuals*_noTimeSteps);
 
@@ -35,10 +33,7 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
                     contact_nodes.push_back(_nodes[v][t-1].get());
                 }
             }
-            if(_forward)
-                _factors.emplace_back(new SEIRFactor(_qE, _qI, _p0, _p1, *_nodes[u][t-1], *_nodes[u][t], contact_nodes, {_nodes[u][t].get()}) );
-            else
-                _factors.emplace_back(new SEIRFactor(_qE, _qI, _p0, _p1, *_nodes[u][t-1], *_nodes[u][t], contact_nodes) );
+            _factors.emplace_back(new SEIRFactor(_qE, _qI, _p0, _p1, *_nodes[u][t-1], *_nodes[u][t], contact_nodes) );
 
             for(auto o = outcomes.begin(); o != outcomes.end();++o) {
                 Outcome outcome(*o);
@@ -49,10 +44,7 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
 
 
         }
-    }  
-
-    propagate(2);
-    
+    }      
 
 }
 
@@ -76,10 +68,7 @@ void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts
                 contact_nodes.push_back(_nodes[v][t-1].get());
             }
         }
-        if(_forward)
-            _factors.emplace_back(new SEIRFactor(_qE, _qI, _p0, _p1, *_nodes[u][t-1], *_nodes[u][t], contact_nodes, {_nodes[u][t].get()}) );
-        else
-            _factors.emplace_back(new SEIRFactor(_qE, _qI, _p0, _p1, *_nodes[u][t-1], *_nodes[u][t], contact_nodes) );
+        _factors.emplace_back(new SEIRFactor(_qE, _qI, _p0, _p1, *_nodes[u][t-1], *_nodes[u][t], contact_nodes) );
   
         // 3. add test outcome factors
         for(auto o = outcomes.begin(); o != outcomes.end();++o) {
@@ -94,9 +83,10 @@ void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts
 }
 
 
-map< tuple<int,int>,  vector<int>> LBPPopulationInfectionStatus::_contact_helper(const vector<ContactTuple>& contacts) {
 
-    map< tuple<int,int>,  vector<int>> contact_map;
+unordered_map< tuple<int,int>,  vector<int>> LBPPopulationInfectionStatus::_contact_helper(const vector<ContactTuple>& contacts) {
+
+    unordered_map< tuple<int,int>,  vector<int>> contact_map;
 
     for(auto c = contacts.begin(); c != contacts.end();++c) {
         Contact contact(*c);
@@ -107,13 +97,12 @@ map< tuple<int,int>,  vector<int>> LBPPopulationInfectionStatus::_contact_helper
 
         contact_map[ make_tuple(u,t)].push_back(v);
     }
-
     return contact_map;
 }
 
 
 
-void LBPPopulationInfectionStatus::propagate(int N) {
+void LBPPopulationInfectionStatus::propagate(int N, PropType prop_type) {
 
     Node::message_counter = 0;
     cerr << _factors.size() << " factors, N=" << N << endl;
@@ -122,8 +111,18 @@ void LBPPopulationInfectionStatus::propagate(int N) {
     
     for( int n=0; n<N; n++) {
         for( int t=0; t<_noTimeSteps; t++) {
-            for( int u=0; u<_noIndividuals; u++) 
-                _nodes[u][t]->update();
+            for( int u=0; u<_noIndividuals; u++) {
+                switch( prop_type) {
+                    case forward:
+                    case baum_welch:
+                        _nodes[u][t]->update( SEIRNode::forward);
+                        break;
+                    case full:
+                        _nodes[u][t]->update( SEIRNode::full);
+                        break;
+                }
+            }
+
             cerr << n << ". " << t;
             auto toc = chrono::steady_clock::now();
             cerr << " " << Node::message_counter << " messages in ";
@@ -131,20 +130,34 @@ void LBPPopulationInfectionStatus::propagate(int N) {
             d /= 1e9;
             cerr << " (" << (Node::message_counter/d) << " msg/s)" << endl;
         }
-        for( int t=_noTimeSteps-1; t>=0; t--) {
-            for( int u=_noIndividuals-1; u>=0; u--) 
-                _nodes[u][t]->update();
-            cerr << n << ". " << t;
-            auto toc = chrono::steady_clock::now();
-            cerr << " " << Node::message_counter << " messages in ";
-            double d = chrono::duration_cast<chrono::nanoseconds>(toc-tic).count();
-            d /= 1e9;
-            cerr << " (" << (Node::message_counter/d) << " msg/s)" << endl;
+        if( prop_type==baum_welch || prop_type==full) {
+            for( int t=_noTimeSteps-1; t>=0; t--) {
+                for( int u=_noIndividuals-1; u>=0; u--) {
+                    switch( prop_type) {
+                        case forward:
+                        case baum_welch:
+                            _nodes[u][t]->update( SEIRNode::backward);
+                            break;
+                        case full:
+                            _nodes[u][t]->update( SEIRNode::full);
+                            break;
+                    }
+                }
+                cerr << n << ". " << t;
+                auto toc = chrono::steady_clock::now();
+                cerr << " " << Node::message_counter << " messages in ";
+                double d = chrono::duration_cast<chrono::nanoseconds>(toc-tic).count();
+                d /= 1e9;
+                cerr << " (" << (Node::message_counter/d) << " msg/s)" << endl;
+            }
         }
     }
+}
 
-
-
+void LBPPopulationInfectionStatus::reset() {
+    for( auto &nu: _nodes)
+        for( auto &nut: nu)
+            nut->reset();
 }
 
 

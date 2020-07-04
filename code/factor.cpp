@@ -13,22 +13,11 @@
 using namespace std;
 
 
-Factor::Factor( const vector<Node*> &nodes, const vector<Node*> &child_nodes) : 
+Factor::Factor( const vector<Node*> &nodes) : 
     _nodes(nodes) 
 {
-    if( child_nodes.size()>0) {
-        for( auto n: child_nodes) {
-            n->add_factor(this);
-            // n->_factors.push_back(this);
-            // n->_messages.emplace_back( new Message(n->_N, 1.0) );
-        }
-    }
-    else {
-        for( auto n: _nodes) {
-            n->add_factor(this);
-            // n->_factors.push_back(this);
-            // n->_messages.emplace_back( new Message(n->_N, 1.0) );
-        }
+    for( auto n: _nodes) {
+        n->add_factor(this);
     }
 }
 
@@ -112,10 +101,9 @@ double TableFactor::potential( const vector<unsigned int> & state_its) {
 
 SEIRFactor::SEIRFactor( const Distribution &qE, const Distribution &qI, 
                         double p0, double p1, 
-                        SEIRNode &in, SEIRNode &out, vector<SEIRNode *> contacts,
-                        const vector<Node*> &child_nodes
+                        SEIRNode &in, SEIRNode &out, vector<SEIRNode *> contacts
                         ) : 
-    Factor(init_helper(in, out, contacts), child_nodes), _piE(init_pi(qE)), _piI(init_pi(qI)), _p0(p0), _p1(p1), _states(in.states()) 
+    Factor(init_helper(in, out, contacts)), _piE(init_pi(qE)), _piI(init_pi(qI)), _p0(p0), _p1(p1), _states(in.states()) 
 {
 }
 

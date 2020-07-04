@@ -18,7 +18,7 @@ public:
     virtual double potential( const vector<unsigned int> &) = 0;
 
 public:
-    Factor( const vector<Node*> &nodes, const vector<Node*> &child_nodes = vector<Node*>());
+    Factor( const vector<Node*> &nodes);
     virtual ~Factor() {}
 
     virtual void message_to( Node *, MessagePtr to);
@@ -58,8 +58,7 @@ public:
     SEIRFactor( const Distribution &qE, const Distribution &qI,
                 double p0, double p1, 
                 SEIRNode &in, SEIRNode &out, 
-                vector<SEIRNode *> contacts = vector<SEIRNode*>(),
-                const vector<Node*> &child_nodes = vector<Node*>());
+                vector<SEIRNode *> contacts = vector<SEIRNode*>());
     virtual ~SEIRFactor(){}
     void message_to( Node *, MessagePtr to);
 
