@@ -32,13 +32,15 @@ if args.setup==1:
     T = 30
     S = 3
 
-    alpha = 0.001
-    beta = 0.01
+    alpha = 0.01
+    beta = 0.1
     p0 = 0.02
-    p1 = 0.99
+    p1 = 0.8
 
     contacts = [(0,1,17,1),
                 (1,0,17,1),
+                (2,1,17,1),
+                (1,2,17,1),
                 (1,2,29,1),
                 (2,1,29,1)]
 
@@ -182,10 +184,11 @@ suptitle("Gibbs sampling in iteratively built up CRISP")
 
 ##########################################################################################
 ### inference with the LBP model
-crisp = LBPPIS( S, T, contacts, tests,qE,qI, alpha, beta, p0, p1, False, False)
+crisp = LBPPIS( S, T, contacts, tests,qE,qI, alpha, beta, p0, p1, False)
+crisp.propagate(5,"full")
 
 t = time.time()
-p = crisp.get_marginals(burnin = 25)
+p = crisp.get_marginals()
 print("LBP inference in {:.3}s".format(time.time()-t))
 print("infection stati:")
 for u,infs in enumerate(p[:,-1]):
@@ -200,10 +203,12 @@ suptitle("Inference with Loopy Belief Propagation")
 
 ##########################################################################################
 ### inference with the LBP model
-crisp = LBPPIS( S, T, contacts, tests,qE,qI, alpha, beta, p0, p1,  True, False)
+crisp.reset()
+crisp.propagate(5,"baum_welch")
+
 
 t = time.time()
-p = crisp.get_marginals(burnin = 25)
+p = crisp.get_marginals()
 print("LBP inference in {:.3}s".format(time.time()-t))
 print("infection stati:")
 for u,infs in enumerate(p[:,-1]):
@@ -214,7 +219,27 @@ for i in range( min(5,S)):
     subplot( min(5,S),1,i+1)
     plot(p[i],'.-')
     grid(True)
-suptitle("Inference with forward message passing")
+suptitle("Inference with Baum-Welch message passing (5 cycles)")
+
+##########################################################################################
+### inference with the LBP model
+crisp.reset()
+crisp.propagate(1,"forward")
+
+
+t = time.time()
+p = crisp.get_marginals()
+print("LBP inference in {:.3}s".format(time.time()-t))
+print("infection stati:")
+for u,infs in enumerate(p[:,-1]):
+    print("{}: {}".format(u,infs))
+
+figure(figsize=(6,8))
+for i in range( min(5,S)):
+    subplot( min(5,S),1,i+1)
+    plot(p[i],'.-')
+    grid(True)
+suptitle("Inference with forward message passing (1 cycle)")
 
 
 show()
