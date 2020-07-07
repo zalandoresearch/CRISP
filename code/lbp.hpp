@@ -38,6 +38,7 @@ class LBPPopulationInfectionStatus: public PopulationInfectionStatus {
     vector<vector< unique_ptr<SEIRNode>>> _nodes;
     vector<unique_ptr<Factor>> _factors;
 
+    map< tuple<int,int>, vector<int>> _contact_map;
 
     bool _forward; // model is a forward message passing model
 
@@ -45,7 +46,7 @@ protected:
     // advance the whole model by one time step, adding new contacts and tests
     virtual void _advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool updatePrior);
 
-    map< tuple<int,int>, vector<int>> _contact_helper(const vector<ContactTuple>& contacts);
+    void _contact_helper(const vector<ContactTuple>& contacts);
 
 public:
     LBPPopulationInfectionStatus(int S, int T,

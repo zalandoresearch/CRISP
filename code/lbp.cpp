@@ -12,8 +12,7 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
     _nodes( S)
 {
     _factors.reserve(_noIndividuals*_noTimeSteps);
-
-    auto contact_map = _contact_helper(contacts);
+    _contact_helper(contacts);
 
     for(int u=0; u<_noIndividuals; u++)
         for( int t=0; t<_noTimeSteps; t++)
@@ -26,8 +25,8 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
         for( int u=0; u<_noIndividuals; u++) {
 
             vector<SEIRNode *> contact_nodes;
-            auto cmi = contact_map.find(make_tuple(u,t-1));
-            if (cmi != contact_map.end()) {
+            auto cmi = _contact_map.find(make_tuple(u,t-1));
+            if (cmi != _contact_map.end()) {
                 for( auto v:  cmi->second) {
                     contact_nodes.push_back(_nodes[v][t-1].get());
                 }
@@ -52,7 +51,7 @@ void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts
 
     // 0. increase _noTimeSteps
     _noTimeSteps++;
-    auto contact_map = _contact_helper(contacts);
+    _contact_helper(contacts);
 
     int t = _noTimeSteps-1;
     for( int u=0; u<_noIndividuals; u++) {
@@ -61,8 +60,8 @@ void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts
 
         // 2. add forward and contact factors
         vector<SEIRNode *> contact_nodes;
-        auto cmi = contact_map.find(make_tuple(u,t-1));
-        if (cmi != contact_map.end()) {
+        auto cmi = _contact_map.find(make_tuple(u,t-1));
+        if (cmi != _contact_map.end()) {
             for( auto v:  cmi->second) {
                 contact_nodes.push_back(_nodes[v][t-1].get());
             }
@@ -77,15 +76,13 @@ void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts
             }
         }
 
-        _nodes[u][t]->update();
+        _nodes[u][t]->update(SEIRNode::forward);
     }
 }
 
 
 
-map< tuple<int,int>,  vector<int>> LBPPopulationInfectionStatus::_contact_helper(const vector<ContactTuple>& contacts) {
-
-    map< tuple<int,int>,  vector<int>> contact_map;
+void LBPPopulationInfectionStatus::_contact_helper(const vector<ContactTuple>& contacts) {
 
     for(auto c = contacts.begin(); c != contacts.end();++c) {
         Contact contact(*c);
@@ -94,9 +91,8 @@ map< tuple<int,int>,  vector<int>> LBPPopulationInfectionStatus::_contact_helper
         const int t = contact.getTime();
         auto x = contact.getCount(); // ToDo: unignore x
 
-        contact_map[ make_tuple(u,t)].push_back(v);
+        _contact_map[ make_tuple(u,t)].push_back(v);
     }
-    return contact_map;
 }
 
 

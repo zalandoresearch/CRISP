@@ -2,7 +2,7 @@ import numpy as np
 from math import exp, log
 from enum import Enum
 from matplotlib.pyplot import *
-from crisp import Distribution, PopulationInfectionStatus
+from crisp import Distribution, LBPPIS, GibbsPIS
 import itertools
 import argparse
 import csv
@@ -44,10 +44,10 @@ class CRISP():
         self.t += 1
 
         if self.pis is None:
-            self.pis = PopulationInfectionStatus(self.S, 1, contacts, [],
-                                                 Distribution(self.qE), Distribution(self.qI),
-                                                 self.alpha, self.beta,
-                                                 self.p0, self.p1, True)
+            self.pis = GibbsPIS(self.S, 1, contacts, [],
+                                Distribution(self.qE), Distribution(self.qI),
+                                self.alpha, self.beta,
+                                self.p0, self.p1, True)
         else:
             self.pis.advance(contacts, [])
 
@@ -165,7 +165,7 @@ class PolicyEvaluator():
             self.write_csv_file(today_contacts, "contacts{}.csv".format(t))
 
             # ... (5) advance the world model by one step based on the new contacts
-            individuals_with_symptom_onset = self.crisp.advance(today_contacts, [])
+            individuals_with_symptom_onset = self.crisp.advance(today_contacts)
 
             # ... (6) compute the test outcomes of the test candidates based on the advanced world model
             today_test_outcomes = self.crisp.sample_test_outcomes(test_candidates)
@@ -391,12 +391,35 @@ class GibbsScoringPolicy(PolicyEvaluator):
 
         # Advance the Gibbs sampling-based scoring by the sparse array of new contacts and new test outcomes
         if self.scorer is None:
-            self.scorer = PopulationInfectionStatus(self.S, 1, new_contacts, new_test_outcomes,
-                                                    Distribution(self.crisp.qE), Distribution(self.crisp.qI),
-                                                    self.crisp.alpha, self.crisp.beta,
-                                                    self.crisp.p0*10, self.crisp.p1, False)
+            self.scorer = GibbsPIS(self.S, 1, new_contacts, new_test_outcomes,
+                                   Distribution(self.crisp.qE), Distribution(self.crisp.qI),
+                                   self.crisp.alpha, self.crisp.beta,
+                                   self.crisp.p0*10, self.crisp.p1, False)
         else:
             self.scorer.advance(new_contacts, new_test_outcomes)
+
+class LBPScoringPolicy(GibbsScoringPolicy):
+
+    # Advances the infection score model based on one new contact matrix, test outcomes and people with symptom onset
+    def advance_infection_score_model(self, new_contacts, new_test_outcomes, individuals_with_symptom_onset):
+        # Store everyone with symptom onsets as future test candidate; they will definitely be tested
+        self.individuals_with_symptom_onset = list(individuals_with_symptom_onset)
+        # Get everyone who has tested positive
+        positive_tested_individuals = [u for (u,_,o) in new_test_outcomes if (o==1)]
+        self.positive_test_outcome[positive_tested_individuals] = True
+
+        print("Found individuals with symptoms onset: {} \nFound individuals with positive test outcome: {}".format(self.individuals_with_symptom_onset,positive_tested_individuals))
+
+        # Advance the Gibbs sampling-based scoring by the sparse array of new contacts and new test outcomes
+        if self.scorer is None:
+            self.scorer = LBPPIS(self.S, 1, new_contacts, new_test_outcomes,
+                                 Distribution(self.crisp.qE), Distribution(self.crisp.qI),
+                                 self.crisp.alpha, self.crisp.beta,
+                                 self.crisp.p0*10, self.crisp.p1, False)
+        else:
+            self.scorer.advance(new_contacts, new_test_outcomes)
+
+
 
 def argument_parser() :
     # Create the parser
@@ -418,7 +441,7 @@ def argument_parser() :
     my_parser.add_argument('--iteration',       type=int,  required=False, default=0,      help="An iteration counter (will be ignored but allows to run for the same random seed for contacts generation)")
     my_parser.add_argument('--interactive',     choices=['on', 'off'], default='on',       help="Run the policy evaluation interactively or with file output")
     my_parser.add_argument('--save-world',      choices=['on', 'off'], default='off',      help="Save the world state to files for each time-step")
-    my_parser.add_argument('--policy',          choices=['no','lockdown','symptom','contact','score'], default='contact', help="The policy to be evaluated")
+    my_parser.add_argument('--policy',          choices=['no','lockdown','symptom','contact','score','lbp'], default='contact', help="The policy to be evaluated")
 
     return my_parser
 
@@ -475,6 +498,9 @@ if __name__ == "__main__":
     elif (args.policy=='score'):
         policy = GibbsScoringPolicy(S=S, T=T, qE=qEVec, qI=qIVec, alpha=alpha, beta=beta, p0=p0, p1=p1, policy_start=policy_start, contacts=contacts, test_capacity=test_capacity, pEI_threshold=args.pEI_threshold, pSR_threshold=args.pSR_threshold, write_world=write_world)
         fig_title = 'Evaluation of Gibbs Score Policy'
+    elif (args.policy=='lbp'):
+        policy = LBPScoringPolicy(S=S, T=T, qE=qEVec, qI=qIVec, alpha=alpha, beta=beta, p0=p0, p1=p1, policy_start=policy_start, contacts=contacts, test_capacity=test_capacity, pEI_threshold=args.pEI_threshold, pSR_threshold=args.pSR_threshold)
+        fig_title = 'Evaluation of LBP Score Policy'
     else:
         raise ValueError("unknown policy: {}".format(args.policy))
 
