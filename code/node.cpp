@@ -136,8 +136,8 @@ MessagePtr SEIRNode::infection_message_to( const Factor *f) const {
     
     MessagePtr m = message_to(f);
     double p_I = 0.0;
-    for( SEIRState s=SEIRState(SEIRState::I,1); +_states.can_continue(s); s = s.next(/* change = */false)) {
+    for( SEIRState s=SEIRState(SEIRState::I,1); _states.can_continue(s); s = s.next(/* change = */false)) {
         p_I += (*m)[_states[s]];
-    }   
+    }  
     return MessagePtr(new Message({1.0-p_I, p_I}));
 }

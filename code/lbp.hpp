@@ -7,7 +7,7 @@
 
 #include <vector>
 #include <memory>
-#include <unordered_map>
+#include <map>
 
 using namespace std;
 
@@ -25,7 +25,8 @@ namespace std {
       // second and third and combine them using XOR
       // and bit shifting:
 
-      return ( (hash<int>()(get<0>(k)) ^ (hash<int>()(get<1>(k)) << 1)) );
+      // return ( (hash<int>()(get<0>(k)) ^ (hash<int>()(get<1>(k)) << 1)) );
+      return hash<int>()(get<0>(k)*10000 + get<1>(k)) ;
     }
   };
 }
@@ -44,14 +45,13 @@ protected:
     // advance the whole model by one time step, adding new contacts and tests
     virtual void _advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool updatePrior);
 
-    unordered_map< tuple<int,int>, vector<int>> _contact_helper(const vector<ContactTuple>& contacts);
+    map< tuple<int,int>, vector<int>> _contact_helper(const vector<ContactTuple>& contacts);
 
 public:
     LBPPopulationInfectionStatus(int S, int T,
                 const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes,
                 Distribution& qE, Distribution& qI,
                 double alpha, double beta, double p0, double p1,
-                bool forward,
                 bool patientZero=false);
     ~LBPPopulationInfectionStatus() { delete &_states;}
 

@@ -127,11 +127,9 @@ const vector<double> SEIRFactor::init_pi( const Distribution &q) {
 
 void SEIRFactor::message_forward( MessagePtr to) {
 
-
     MessagePtr output_message = to;
     MessagePtr input_message = _nodes[0]->message_to(this);
     
-
     double p_keep = (1.0-_p0);
     for( size_t i=2; i<_nodes.size(); i++) {
         auto m = ((SEIRNode*)_nodes[i])->infection_message_to(this);

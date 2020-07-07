@@ -6,7 +6,6 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
                 const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes,
                 Distribution& qE, Distribution& qI,
                 double alpha, double beta, double p0, double p1,
-                bool forward,
                 bool patientZero) :
     PopulationInfectionStatus( S, T, contacts, outcomes, qE, qI, alpha, beta, p0, p1, patientZero),
     _states(* new SEIRStateSpace( qE.getMaxOutcomeValue(), qI.getMaxOutcomeValue()) ),
@@ -46,7 +45,7 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
         }
     }      
 
-}
+}   
 
 
 void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool /* updatePrior */) {
@@ -84,9 +83,9 @@ void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts
 
 
 
-unordered_map< tuple<int,int>,  vector<int>> LBPPopulationInfectionStatus::_contact_helper(const vector<ContactTuple>& contacts) {
+map< tuple<int,int>,  vector<int>> LBPPopulationInfectionStatus::_contact_helper(const vector<ContactTuple>& contacts) {
 
-    unordered_map< tuple<int,int>,  vector<int>> contact_map;
+    map< tuple<int,int>,  vector<int>> contact_map;
 
     for(auto c = contacts.begin(); c != contacts.end();++c) {
         Contact contact(*c);
