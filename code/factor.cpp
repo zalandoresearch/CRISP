@@ -9,12 +9,13 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <cassert>
 
 using namespace std;
 
 
-Factor::Factor( const vector<Node*> &nodes) : 
-    _nodes(nodes) 
+Factor::Factor( const vector<Node*> &nodes) :
+    _nodes(nodes)
 {
     for( auto n: _nodes) {
         n->add_factor(this);
@@ -26,7 +27,7 @@ void Factor::message_to( Node* n, MessagePtr to) {
 
     fill( to->begin(), to->end(), 0.0);
 
-    size_t i_node = 0; 
+    size_t i_node = 0;
     for( ; i_node<_nodes.size() && _nodes[i_node]!=n; i_node++){
     }
     assert( i_node<_nodes.size()); // n needs to be in _nodes
@@ -62,20 +63,20 @@ void Factor::message_to( Node* n, MessagePtr to) {
             msg_its[i]++;
             state_its[i]++;
             if(_nodes[i] == n) out_msg_it++;
-            
+
             if( msg_its[i] == incoming_messages[i]->end()) {
-                // if they overrun, wrap them over to the beginning 
+                // if they overrun, wrap them over to the beginning
                 msg_its[i]   = incoming_messages[i]->begin();
-                state_its[i] = 0;  
-                if(_nodes[i] == n) 
-                    out_msg_it = outgoing_message->begin(); 
+                state_its[i] = 0;
+                if(_nodes[i] == n)
+                    out_msg_it = outgoing_message->begin();
 
                 // if the first iterator wrapped around we are done
-                if( i==0) goto done;           
-            }          
+                if( i==0) goto done;
+            }
             else break;
         }
-    } 
+    }
     done:
     return;
 }
@@ -99,11 +100,11 @@ double TableFactor::potential( const vector<unsigned int> & state_its) {
 }
 
 
-SEIRFactor::SEIRFactor( const Distribution &qE, const Distribution &qI, 
-                        double p0, double p1, 
+SEIRFactor::SEIRFactor( const Distribution &qE, const Distribution &qI,
+                        double p0, double p1,
                         SEIRNode &in, SEIRNode &out, vector<SEIRNode *> contacts
-                        ) : 
-    Factor(init_helper(in, out, contacts)), _piE(init_pi(qE)), _piI(init_pi(qI)), _p0(p0), _p1(p1), _states(in.states()) 
+                        ) :
+    Factor(init_helper(in, out, contacts)), _piE(init_pi(qE)), _piI(init_pi(qI)), _p0(p0), _p1(p1), _states(in.states())
 {
 }
 
@@ -118,8 +119,8 @@ vector<Node *> SEIRFactor::init_helper(SEIRNode &in, SEIRNode &out, vector<SEIRN
 const vector<double> SEIRFactor::init_pi( const Distribution &q) {
 
     auto res = Message(q.getMaxOutcomeValue()+1);
-    for( int i=0; i<res.size(); i++)
-        res[i] = exp( q.getLogP(i)-q.getLogPTail(i)); 
+    for( unsigned int i=0; i<res.size(); i++)
+        res[i] = exp( q.getLogP(i)-q.getLogPTail(i));
     return res;
 }
 
@@ -129,7 +130,7 @@ void SEIRFactor::message_forward( MessagePtr to) {
 
     MessagePtr output_message = to;
     MessagePtr input_message = _nodes[0]->message_to(this);
-    
+
     double p_keep = (1.0-_p0);
     for( size_t i=2; i<_nodes.size(); i++) {
         auto m = ((SEIRNode*)_nodes[i])->infection_message_to(this);
@@ -137,7 +138,7 @@ void SEIRFactor::message_forward( MessagePtr to) {
     }
 
     auto it_input_message = input_message->cbegin();
-    for( auto it_input_states = _states.cbegin(); it_input_states != _states.cend(); ++it_input_states) 
+    for( auto it_input_states = _states.cbegin(); it_input_states != _states.cend(); ++it_input_states)
     {
         auto in = *it_input_states;
         const double& in_value = *it_input_message;
@@ -149,13 +150,13 @@ void SEIRFactor::message_forward( MessagePtr to) {
             } break;
             case SEIRState::E: {
                 (*output_message)[_states[in.next(/*change = */ true)]]  += in_value * _piE[in.days()];
-                if( _states.can_continue(in))   
+                if( _states.can_continue(in))
                     (*output_message)[_states[in.next(/*change = */ false)]] += in_value * (1.0-_piE[in.days()]);
 
             } break;
             case SEIRState::I: {
                 (*output_message)[_states[in.next(/*change = */ true)]]  += in_value * _piI[in.days()];
-                if( _states.can_continue(in))   
+                if( _states.can_continue(in))
                     (*output_message)[_states[in.next(/*change = */ false)]] += in_value * (1.0-_piI[in.days()]);
             } break;
             case SEIRState::R: {
@@ -179,7 +180,7 @@ void SEIRFactor::message_backward( MessagePtr to) {
         p_keep *= m->at(0) + (1-_p1) * m->at(1);
     }
 
-    for( auto it_input_states = _states.cbegin(); it_input_states != _states.cend(); ++it_input_states) 
+    for( auto it_input_states = _states.cbegin(); it_input_states != _states.cend(); ++it_input_states)
     {
         auto in = *it_input_states;
 
@@ -190,13 +191,13 @@ void SEIRFactor::message_backward( MessagePtr to) {
             } break;
             case SEIRState::E: {
                 (*input_message)[_states[in]] += (*output_message)[_states[in.next(/*change = */ true)]] * _piE[in.days()];
-                if( _states.can_continue(in))   
+                if( _states.can_continue(in))
                     (*input_message)[_states[in]] += (*output_message)[_states[in.next(/*change = */ false)]] * (1.0-_piE[in.days()]);
 
             } break;
             case SEIRState::I: {
                 (*input_message)[_states[in]] += (*output_message)[_states[in.next(/*change = */ true)]] * _piI[in.days()];
-                if( _states.can_continue(in))   
+                if( _states.can_continue(in))
                     (*input_message)[_states[in]] += (*output_message)[_states[in.next(/*change = */ false)]] * (1.0-_piI[in.days()]);
             } break;
             case SEIRState::R: {
@@ -205,7 +206,7 @@ void SEIRFactor::message_backward( MessagePtr to) {
         }
     }
 }
-        
+
 
 void SEIRFactor::message_vertical( Node *n, MessagePtr to) {
 
@@ -239,14 +240,14 @@ void SEIRFactor::message_vertical( Node *n, MessagePtr to) {
                 p += (*input_message)[_states[in]] * (*output_message)[_states[in.next(/*change = */ false)]] * (1.0 - _piE[in.days()]);
                 p_outgoing[0] += p;
                 p_outgoing[1] += p;
-            } break;                    
+            } break;
             case SEIRState::I: {
                 double p;
                 p =  (*input_message)[_states[in]] * (*output_message)[_states[in.next(/*change = */ true)]] * _piI[in.days()];
                 p += (*input_message)[_states[in]] * (*output_message)[_states[in.next(/*change = */ false)]] * (1.0 - _piI[in.days()]);
                 p_outgoing[0] += p;
                 p_outgoing[1] += p;
-            } break;                    
+            } break;
             case SEIRState::R: {
                 double p = (*input_message)[_states[in]] * (*output_message)[_states[in.next(/*change = */ false)]];
                 p_outgoing[0] += p;
@@ -284,12 +285,12 @@ SEIRInitFactor::SEIRInitFactor( SEIRNode &out, bool patient_zero) :
 {
 }
 
-double SEIRInitFactor::potential( const vector<unsigned int> &state_its) {
+double SEIRInitFactor::potential( const vector<unsigned int> &/*state_its*/) {
      assert(false); // SEIRInitFactor implements its own message_to() method
      return 0.0;
 }
 
-void SEIRInitFactor::message_to( Node *n, MessagePtr to) {
+void SEIRInitFactor::message_to( Node * /*n*/, MessagePtr to) {
 
     fill( to->begin(), to->end(), 0.0);
     if( _patient_zero)
@@ -310,8 +311,8 @@ double SEIRTestFactor::potential( const vector<unsigned int> &state_its) {
 
     SEIRState out = _states[state_its[0]];
 
-    if( _positive) 
+    if( _positive)
         return out.phase() == SEIRState::I ? 1.0-_alpha : _beta;
-    else 
+    else
         return out.phase() == SEIRState::I ? _alpha : 1.0-_beta;
 }

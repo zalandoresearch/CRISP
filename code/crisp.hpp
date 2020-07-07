@@ -4,6 +4,7 @@
 #include <vector>
 #include <iostream>
 # include <random>
+#include <tuple>
 
 using namespace std;
 
@@ -12,8 +13,8 @@ using namespace std;
 
 
 // This enum captures the two test outcomes
-enum TestOutcome 
-{   Negative = 0, 
+enum TestOutcome
+{   Negative = 0,
     Positive = 1
 };
 
@@ -25,7 +26,7 @@ class Outcome {
         int         _time;
         TestOutcome _outcome;
     public:
-        Outcome(int u, int t, TestOutcome o) : 
+        Outcome(int u, int t, TestOutcome o) :
             _individual(u),
             _time(t),
             _outcome(o) {}
@@ -44,11 +45,11 @@ class Contact {
         int  _time;
         int  _count;
     public:
-        Contact(int u, int v, int t, int count) : 
+        Contact(int u, int v, int t, int count) :
             _fromIndividual(u),
             _toIndividual(v),
-            _time(t), 
-            _count(count) {}; 
+            _time(t),
+            _count(count) {};
         Contact(const ContactTuple &c): Contact(get<0>(c), get<1>(c), get<2>(c), get<3>(c) ) {}
         int getTargetIndividual() const { return(_toIndividual); }
         int getSourceIndividual() const { return(_fromIndividual); }
@@ -143,7 +144,7 @@ public:
                     bool patientZero=false);
 
     PopulationInfectionStatus( const PopulationInfectionStatus& other) = delete;
-    PopulationInfectionStatus & operator=(const PopulationInfectionStatus &) = delete;  
+    PopulationInfectionStatus & operator=(const PopulationInfectionStatus &) = delete;
 
     // advance the whole model by one time step, adding new contacts and tests
     void advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes) {

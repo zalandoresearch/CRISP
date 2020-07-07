@@ -4,6 +4,7 @@
 #include <vector>
 #include <iostream>
 #include <map>
+#include <cassert>
 using namespace std;
 
 
@@ -28,6 +29,7 @@ SEIRState SEIRState::next( bool change) const {
             case R: return SEIRState(R);
         }
     }
+    return SEIRState(S);
 }
 
 
@@ -61,16 +63,18 @@ int SEIRStateSpace::operator[] (const SEIRState &s) const {
         case SEIRState::I: return s.days()+dEMax;
         case SEIRState::R: return 1+dEMax+dIMax;
     }
+    return -1;
 }
 
 
-bool SEIRStateSpace::can_continue( const SEIRState &s) const {  
+bool SEIRStateSpace::can_continue( const SEIRState &s) const {
     switch( s.phase()) {
         case SEIRState::S: return true;
         case SEIRState::E: return s.days()<dEMax;
         case SEIRState::I: return s.days()<dIMax;
         case SEIRState::R: return true;
     }
+    return false;
 }
 
 
@@ -92,7 +96,7 @@ Message basic_states( const Message &message, const SEIRStateSpace &states) {
     Message out(4);
 
     for( size_t i=0; i<message.size(); i++) {
-        out[states[i].phase()] += message[i]; 
+        out[states[i].phase()] += message[i];
     }
     return out;
 }
@@ -104,7 +108,7 @@ VirusLoad::VirusLoad() {
 }
 
 void VirusLoad::add_source( double p, double x) {
-    
+
     auto Px(_Px);
 
     for( auto it = _Px.begin(); it!=_Px.end(); ++it)
@@ -122,6 +126,6 @@ ostream& operator<<(ostream& os, const VirusLoad &l) {
         os << "(" <<it->first <<": "<< it->second << ") ";
         p += it->second;
     }
-    os << "], p = " << p; 
+    os << "], p = " << p;
     return os;
 }

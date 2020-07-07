@@ -2,6 +2,7 @@
 #include <map>
 #include <random>
 #include <cmath>
+#include <cassert>
 
 #include "gibbs.hpp"
 
@@ -11,12 +12,12 @@ using namespace std;
 
 
 
-InfectionTrace::InfectionTrace(const int t0, const int dE, const int dI) : 
-    _t0(t0), 
+InfectionTrace::InfectionTrace(const int t0, const int dE, const int dI) :
+    _t0(t0),
     _t0dE(t0 + dE),
     _t0dEdI(t0+dE+dI) { }
 
-// Overloading [] operator to access elements in array style 
+// Overloading [] operator to access elements in array style
 SEIRState InfectionTrace::operator[](int index) const {
     if (index < _t0) {
         return SEIRState::S;
@@ -454,7 +455,7 @@ array3<double> GibbsPopulationInfectionStatus::getMarginals(int N, int burnIn, i
             for( int t_=0; t_<Z[n][u][0]; t_++) p[u][t++][0] += 1.0/N;
             for( int t_=0; t_<Z[n][u][1]; t_++) p[u][t++][1] += 1.0/N;
             for( int t_=0; t_<Z[n][u][2]; t_++) p[u][t++][2] += 1.0/N;
-            while(t<_noTimeSteps) p[u][t++][3] += 1.0/N;            
+            while(t<_noTimeSteps) p[u][t++][3] += 1.0/N;
         }
 
     return p;
@@ -473,7 +474,7 @@ array3<int> GibbsPopulationInfectionStatus::sample( int N, int burnIn, int skip)
             for( int t_=0; t_<Z[n][u][0]; t_++) Z_[n][u][t++] = 0;
             for( int t_=0; t_<Z[n][u][1]; t_++) Z_[n][u][t++] = 1;
             for( int t_=0; t_<Z[n][u][2]; t_++) Z_[n][u][t++] = 2;
-            while(t<_noTimeSteps) Z_[n][u][t++] = 3;            
+            while(t<_noTimeSteps) Z_[n][u][t++] = 3;
         }
 
     return Z_;

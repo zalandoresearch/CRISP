@@ -7,10 +7,10 @@ std::ostream &operator<<(std::ostream &os, Contact const &c) {
 
 
 PopulationInfectionStatus::PopulationInfectionStatus(int S, int T,
-                const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes,
+                const vector<ContactTuple>& /*contacts*/, const vector<OutcomeTuple>& /*outcomes*/,
                 Distribution& qE, Distribution& qI,
                 double alpha, double beta, double p0, double p1,
-                bool patientZero):
+                bool /*patientZero*/):
 
         _noIndividuals(S),
         _noTimeSteps(T),
@@ -28,5 +28,5 @@ PopulationInfectionStatus::PopulationInfectionStatus(int S, int T,
         _minExposure(qE.getMinOutcomeValue()),
         _minInfectious(qI.getMinOutcomeValue()),
         _maxExposure(qE.getMaxOutcomeValue()),
-        _maxInfectious(qI.getMaxOutcomeValue()) 
+        _maxInfectious(qI.getMaxOutcomeValue())
 {}

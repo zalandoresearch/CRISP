@@ -24,22 +24,22 @@ double sum( const Message &m) {
     for( auto i=m.begin(); i!=m.end();++i) res += *i;
     return res;
 }
- 
+
 
 
 void loopy_test() {
 
 /*
 small example of loopy BP, node D ends up with incorrect marginals
-                  .─.            
-                 ( B )           
-                 ╱`─'╲           
-       .─.      ╱     ╲      .─. 
+                  .─.
+                 ( B )
+                 ╱`─'╲
+       .─.      ╱     ╲      .─.
 ██────( A )────██     ██────( D )
-       `─'      ╲     ╱      `─' 
-                 ╲.─.╱           
-                 ( C )           
-                  `─'            
+       `─'      ╲     ╱      `─'
+                 ╲.─.╱
+                 ( C )
+                  `─'
 
 */
     int N = 3;
@@ -47,7 +47,7 @@ small example of loopy BP, node D ends up with incorrect marginals
 
     auto tA = prob_vector(N);
     vector<Node*> nA = {&A};
-    TableFactor fA( nA, tA );  
+    TableFactor fA( nA, tA );
 
     vector<double> tABC;
     for(int i=0; i<N; i++) {
@@ -55,7 +55,7 @@ small example of loopy BP, node D ends up with incorrect marginals
         tABC.insert(tABC.end(),v.begin(),v.end());
     }
     vector<Node*> nABC = {&A, &B, &C};
-    TableFactor fABC( nABC, tABC );  
+    TableFactor fABC( nABC, tABC );
 
     vector<double> tBCD;
     for(int i=0; i<N*N; i++) {
@@ -63,9 +63,9 @@ small example of loopy BP, node D ends up with incorrect marginals
         tBCD.insert(tBCD.end(),v.begin(),v.end());
     }
     vector<Node*> nBCD = {&B, &C, &D};
-    TableFactor fBCD( nBCD, tBCD );  
+    TableFactor fBCD( nBCD, tBCD );
 
-    cout << std::fixed; 
+    cout << std::fixed;
     cout.precision(5);
 
     for( int i=0; i<5; i++) {
@@ -86,7 +86,7 @@ small example of loopy BP, node D ends up with incorrect marginals
     vector<double> PC(N, 0.0);
     vector< vector<double>> PBC(N, vector<double>(N,0.0));
     auto it = tABC.begin();
-    for(int i=0; i<N; i++) 
+    for(int i=0; i<N; i++)
         for(int j=0; j<N; j++)
             for(int k=0; k<N; k++) {
                 PB[j] += PA[i] *(*it);
@@ -98,7 +98,7 @@ small example of loopy BP, node D ends up with incorrect marginals
     vector<double> PD(N, 0.0);
     vector<double> PD_(N, 0.0);
     it = tBCD.begin();
-    for(int i=0; i<N; i++) 
+    for(int i=0; i<N; i++)
         for(int j=0; j<N; j++)
             for(int k=0; k<N; k++) {
                 PD[k] += PBC[i][j] *(*it);
@@ -132,7 +132,7 @@ void seir_state_test() {
                 0.03589255717, 0.03151878504, 0.02747963753, 0.02380914891, 0.02051758911,
                 0.01759822872, 0.01503287457, 0.0127962154, 0.01085910889, 0.009190974483,
                 0.007761463001, 0.006541562648, 0.005504277076};
-    
+
     double p0 = 0.02;
     double p1 = 0.99;
 
@@ -144,15 +144,15 @@ void seir_state_test() {
         cout << s <<" ";
     cout << endl;
 
-    SEIRNode node1( states, p1); 
-    SEIRNode node2( states, p1); 
+    SEIRNode node1( states, p1);
+    SEIRNode node2( states, p1);
 
 
     unsigned int S = 3;
     unsigned int T = 30;
     vector<unique_ptr<SEIRNode>> nodes;//, SEIRNode(states));
-    for( int u=0; u<S; u++)
-        for( int t=0; t<T; t++)
+    for( unsigned int u=0; u<S; u++)
+        for( unsigned int t=0; t<T; t++)
             nodes.emplace_back(new SEIRNode(states, p1));
 
 
@@ -165,11 +165,11 @@ void seir_state_test() {
             if      (t==17 && s==0) factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, *nodes[S*t+s], *nodes[S*(t+1)+s], vector<SEIRNode*>({nodes[S*t+1].get()}) ));
             else if (t==17 && s==1) factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, *nodes[S*t+s], *nodes[S*(t+1)+s], vector<SEIRNode*>({nodes[S*t+0].get(),nodes[S*t+2].get()}) ));
             else if (t==17 && s==2) factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, *nodes[S*t+s], *nodes[S*(t+1)+s], vector<SEIRNode*>({nodes[S*t+1].get()}) ));
-            
+
             else
                 factors.emplace_back( new SEIRFactor(qE, qI, p0, p1, *nodes[S*t+s], *nodes[S*(t+1)+s] ));
         }
-    }   
+    }
 
 
     factors.emplace_back( new SEIRTestFactor( *nodes[S*9+0], false, alpha, beta) );
@@ -179,19 +179,19 @@ void seir_state_test() {
 
     // for( auto f = factors.begin(); f!=factors.end(); f++) {
     //     cerr << (*f)->_nodes.size() <<"(" << (*f) << "): ";
-    //     for( auto n: (*f)->_nodes) cerr << (void*)(n) << " "; 
+    //     for( auto n: (*f)->_nodes) cerr << (void*)(n) << " ";
     //     cerr << endl;
     // }
     cerr << factors.size() << "factors" << endl;
 
     for( int i=0; i<25; i++) {
-        for(auto &node: nodes) 
+        for(auto &node: nodes)
             node->update();
         for( auto node = nodes.rbegin(); node !=nodes.rend(); ++node)
             (*node)->update();
     }
 
-    cout << std::fixed; 
+    cout << std::fixed;
     cout.precision(3);
 
     // auto fac = factors[0]->message_to(&nodes[1]);
@@ -218,7 +218,7 @@ void virus_load_test() {
     Px.add_source( 0.1, 1.0);
     Px.add_source( 0.1, 1.1);
     Px.add_source( 0.1, 0.95);
-    
+
 
     cout << Px << endl;
 
@@ -235,7 +235,7 @@ int main() {
 
 
 /* ToDo:
-- strip inner loops of SEIRFactor::message_horizontally, and SEIRFactor::message_vertical 
+- strip inner loops of SEIRFactor::message_horizontally, and SEIRFactor::message_vertical
 - make VirusLoad nicer, collecting the load distribution may need explicit scaling of the incoming factor
 - cleaup _states, make it global for all SEIRNodes
 - implement short_messages (aggregated over the four SEIR states )

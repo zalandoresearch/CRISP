@@ -15,15 +15,15 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
 
     auto contact_map = _contact_helper(contacts);
 
-    for(int u=0; u<_noIndividuals; u++) 
+    for(int u=0; u<_noIndividuals; u++)
         for( int t=0; t<_noTimeSteps; t++)
             _nodes[u].emplace_back( new SEIRNode(_states,_p1));
 
-    for( size_t u=0; u<_noIndividuals; u++) 
+    for( int u=0; u<_noIndividuals; u++)
         _factors.emplace_back(new SEIRInitFactor(*_nodes[u][0],patientZero && u==0));
-    
-    for( size_t t=1; t<_noTimeSteps; t++) {
-        for( size_t u=0; u<_noIndividuals; u++) {
+
+    for( int t=1; t<_noTimeSteps; t++) {
+        for( int u=0; u<_noIndividuals; u++) {
 
             vector<SEIRNode *> contact_nodes;
             auto cmi = contact_map.find(make_tuple(u,t-1));
@@ -43,19 +43,19 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
 
 
         }
-    }      
+    }
 
-}   
+}
 
 
 void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool /* updatePrior */) {
-     
+
     // 0. increase _noTimeSteps
     _noTimeSteps++;
     auto contact_map = _contact_helper(contacts);
 
     int t = _noTimeSteps-1;
-    for( size_t u=0; u<_noIndividuals; u++) {
+    for( int u=0; u<_noIndividuals; u++) {
         // 1. append to all nodes
         _nodes[u].emplace_back(new SEIRNode(_states,_p1));
 
@@ -68,7 +68,7 @@ void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts
             }
         }
         _factors.emplace_back(new SEIRFactor(_qE, _qI, _p0, _p1, *_nodes[u][t-1], *_nodes[u][t], contact_nodes) );
-  
+
         // 3. add test outcome factors
         for(auto o = outcomes.begin(); o != outcomes.end();++o) {
             Outcome outcome(*o);
@@ -107,7 +107,7 @@ void LBPPopulationInfectionStatus::propagate(int N, PropType prop_type) {
     cerr << _factors.size() << " factors, N=" << N << endl;
     auto tic = chrono::steady_clock::now();
 
-    
+
     for( int n=0; n<N; n++) {
         for( int t=0; t<_noTimeSteps; t++) {
             for( int u=0; u<_noIndividuals; u++) {
@@ -160,7 +160,7 @@ void LBPPopulationInfectionStatus::reset() {
 }
 
 
-vector<vector<double>> LBPPopulationInfectionStatus::getInfectionStatus(int N, int burnIn, int skip) {
+vector<vector<double>> LBPPopulationInfectionStatus::getInfectionStatus(int /*N*/, int /*burnIn*/, int /*skip*/) {
 
     vector<vector<double>> res(_noIndividuals, vector<double> (4));
     for( int u=0; u<_noIndividuals; u++) {
@@ -172,11 +172,11 @@ vector<vector<double>> LBPPopulationInfectionStatus::getInfectionStatus(int N, i
 }
 
 // get the posterior marginal distributions P(z_{u,t}|D_{contact}, D_{test})
-array3<double> LBPPopulationInfectionStatus::getMarginals(int N, int burnIn, int skip) {
+array3<double> LBPPopulationInfectionStatus::getMarginals(int /*N*/, int /*burnIn*/, int /*skip*/) {
 
     array3<double> res(_noIndividuals, array2<double>( _noTimeSteps, array1<double>( 4, 0.0)));
     for( int u=0; u<_noIndividuals; u++)
-        for(int t=0; t<_noTimeSteps; t++) {  
+        for(int t=0; t<_noTimeSteps; t++) {
             res[u][t] = basic_states(*_nodes[u][t]->message_to(), _states);
             normalize(res[u][t]);
         }
@@ -186,12 +186,12 @@ array3<double> LBPPopulationInfectionStatus::getMarginals(int N, int burnIn, int
 }
 
 // sample posterior mariginals $P_{u,t}(z_{u,t})$
-array3<int> LBPPopulationInfectionStatus::sample( int N, int burnIn, int skip) {
+array3<int> LBPPopulationInfectionStatus::sample( int N, int /*burnIn*/, int /*skip*/) {
 
     array3<int> Z(N, array2<int>( _noIndividuals, array1<int>( _noTimeSteps, 0)));
     for( int u=0; u<_noIndividuals; u++)
         for(int t=0; t<_noTimeSteps; t++)
-            for( int n=0; n<N; n++) {   
+            for( int n=0; n<N; n++) {
                 auto p = normalize(basic_states(*_nodes[u][t]->message_to(), _states));
                 double r = (double)rand() / RAND_MAX;
                 for( auto pi: p ) {
@@ -201,5 +201,5 @@ array3<int> LBPPopulationInfectionStatus::sample( int N, int burnIn, int skip) {
                 }
             }
     return Z;
-}       
+}
 
