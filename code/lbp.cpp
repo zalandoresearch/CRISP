@@ -75,9 +75,21 @@ void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts
                 _factors.emplace_back( new SEIRTestFactor( *_nodes[u][t], outcome.getOutcome(), _alpha, _beta) );
             }
         }
-
-        _nodes[u][t]->update(SEIRNode::forward);
     }
+
+    t=_noTimeSteps-1;
+    for( ; t>=_noTimeSteps-5 && t>=0; t--) {
+        //cerr << "t=" << t << endl;
+        for( int u=0; u<_noIndividuals; u++)
+            _nodes[u][t]->update(SEIRNode::full);
+    }
+    t+=2;
+    for( ; t<_noTimeSteps; t++) {
+        //cerr << "t=" << t << endl;
+        for( int u=0; u<_noIndividuals; u++)
+            _nodes[u][t]->update(SEIRNode::full);
+    }
+
 }
 
 

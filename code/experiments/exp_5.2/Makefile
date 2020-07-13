@@ -42,7 +42,7 @@ BUILD_TARGETS_CONTACT:=$(foreach QD,$(QDAYS),$(subst {QD},$(QD),$(BUILD_TARGETS_
 BUILD_TARGETS_CONTACT:=$(foreach PD,$(PDAYS),$(subst {PD},$(PD),$(BUILD_TARGETS_CONTACT)))
 BUILD_TARGETS_CONTACT:=$(foreach SD,$(SEED), $(subst {SD},$(SD),$(BUILD_TARGETS_CONTACT)))
 
-BUILD_TARGETS_SCORE:= _--policy_score_--pEI-threshold_{PEIT}_--pSR-threshold_{PSRT}_--seed_{SD}_--iteration_{IT}_${ARGS}
+BUILD_TARGETS_SCORE:= _--policy_lbp_--pEI-threshold_{PEIT}_--pSR-threshold_{PSRT}_--seed_{SD}_--iteration_{IT}_${ARGS}
 BUILD_TARGETS_SCORE:=$(foreach IT,$(IT),$(subst {IT},$(IT),$(BUILD_TARGETS_SCORE)))
 BUILD_TARGETS_SCORE:=$(foreach R0,$(R0),$(subst {R0},$(R0),$(BUILD_TARGETS_SCORE)))
 BUILD_TARGETS_SCORE:=$(foreach PS,$(POLICY_START),$(subst {PS},$(PS),$(BUILD_TARGETS_SCORE)))
@@ -57,7 +57,7 @@ BUILD_TARGETS:=$(BUILD_TARGETS_NO) $(BUILD_TARGETS_LOCKDOWN) $(BUILD_TARGETS_SYM
 SRUN := srun -p cpu -c 1 --mem=8GB
 # SRUN := 
 
-CMD := python -u ../../../../exp_test_quarantine.py
+CMD := python -u ../../exp_test_quarantine.py
 
 RUN_EXP = run_exp() { \
 	mkdir results/$$1; \
