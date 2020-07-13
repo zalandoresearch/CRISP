@@ -92,6 +92,7 @@ SEIRNode::SEIRNode( const SEIRStateSpace &all_states, double p1) :
     // _z_marginal(2),
     _p1(p1)
 {
+    (void) _p1; // to suppress -Wunused-parameter warnings
 }
 
 

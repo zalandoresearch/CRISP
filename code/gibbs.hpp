@@ -94,7 +94,7 @@ class GibbsPopulationInfectionStatus : public PopulationInfectionStatus {
         GibbsPopulationInfectionStatus( const GibbsPopulationInfectionStatus &other) = delete;
         
         GibbsPopulationInfectionStatus & operator= (const GibbsPopulationInfectionStatus &) = delete;  
-
+        virtual ~GibbsPopulationInfectionStatus() {};
         // implements Gibbs sampling over the whole population
         vector<vector<vector<int>>> gibbsSample(int N=1, int burnIn=0, int skip=0);
 

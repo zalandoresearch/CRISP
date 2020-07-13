@@ -69,11 +69,14 @@ class SEIRNode: public Node {
     // vector<MessagePtr> _z_messages;       
     // Message _z_marginal;
 
+    using Node::update;
 public:
     enum Update { forward, backward, full };
     SEIRNode( const SEIRStateSpace &all_states, double p1);
+    virtual ~SEIRNode() {};
+
     virtual void add_factor( Factor* f);
-    virtual void update( Update upd = full);
+    void update( Update upd);
 
     const SEIRStateSpace& states() {return _states;};
     MessagePtr infection_message_to( const Factor *f =0) const;

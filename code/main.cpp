@@ -186,9 +186,9 @@ void seir_state_test() {
 
     for( int i=0; i<25; i++) {
         for(auto &node: nodes)
-            node->update();
+            node->update(SEIRNode::full);
         for( auto node = nodes.rbegin(); node !=nodes.rend(); ++node)
-            (*node)->update();
+            (*node)->update( SEIRNode::full);
     }
 
     cout << std::fixed;

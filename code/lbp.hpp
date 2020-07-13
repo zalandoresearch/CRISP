@@ -40,8 +40,6 @@ class LBPPopulationInfectionStatus: public PopulationInfectionStatus {
 
     map< tuple<int,int>, vector<int>> _contact_map;
 
-    bool _forward; // model is a forward message passing model
-
 protected:
     // advance the whole model by one time step, adding new contacts and tests
     virtual void _advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool updatePrior);
@@ -54,7 +52,7 @@ public:
                 Distribution& qE, Distribution& qI,
                 double alpha, double beta, double p0, double p1,
                 bool patientZero=false);
-    ~LBPPopulationInfectionStatus() { delete &_states;}
+    virtual ~LBPPopulationInfectionStatus() { delete &_states;}
 
     enum PropType { forward, baum_welch, full};
 
