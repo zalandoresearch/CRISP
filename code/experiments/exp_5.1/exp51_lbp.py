@@ -83,7 +83,7 @@ if __name__=="__main__":
                            help="The false positive rate of the I-test")
     my_parser.add_argument('--R0', type=float, required=False, default=2.5, help="The R0 factor of COVID-19")
     my_parser.add_argument('--seed', type=int,  required=False, default=42, help="The random seed for contacts generation")
-    
+
     args = my_parser.parse_args()
 
 
@@ -135,11 +135,11 @@ if __name__=="__main__":
         pis.propagate(1,"forward")
         print("pis created in {:.2f}s".format(time.time()-t))
         P = pis.get_marginals();
-        P = P.mean(0)
+        #P = P.mean(0)
         ax = fig.gca()
         ax.set_prop_cycle( cycler(color=["orange","red","blue"]))
-        for i in range(1, P.shape[1]):
-            ax.plot(P[:, i]*S, linestyle='-', linewidth=2)
+        for i in range(1, P.shape[2]):
+            ax.plot(P[:,:, i].T*S, linestyle='-', linewidth=1)
 
         if t_branch is not None:
             t = time.time()
@@ -147,12 +147,12 @@ if __name__=="__main__":
             pis.propagate(1,"forward")
             print("pis created in {:.2f}s".format(time.time()-t))
             P_branch = pis.get_marginals();
-            P_branch = P_branch.mean(0)
+            #P_branch = P_branch.mean(0)
             ax = fig.gca()
             ax.set_prop_cycle(cycler(color=["orange", "red", "blue"]))
-            for i in range(1, P.shape[1]):
-                ax.plot(np.arange(t_branch,T), P_branch[t_branch:, i] * S,
-                        linestyle='--', linewidth=2)
+            for i in range(1, P.shape[2]):
+                ax.plot(np.arange(t_branch,T), P_branch[:,t_branch:, i].T * S,
+                        linestyle='--', linewidth=1)
 
         xlabel('days after patient 0 got infected')
         legend(['E', 'I', 'R'])
@@ -167,7 +167,7 @@ if __name__=="__main__":
     fig_0 = make_figure(contacts)
     title('no mitigation')
     print("ok")
-    
+
     print("creating figure 4 ... ", end="")
     contacts_mit = init_contacts(S=S, T=T, R0=R0, p1=p1,  R0_mit=(R0-0.5,0.5), t_mit=60, H=20, seed=args.seed)
     fig_4 = make_figure(contacts_mit)#, t_branch=60, contacts_branch=contacts)
