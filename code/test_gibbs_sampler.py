@@ -2,7 +2,7 @@ import argparse
 import sys
 sys.path.append('..')
 
-from crisp import Distribution, PopulationInfectionStatus
+from crisp import Distribution, GibbsPIS, LBPPIS
 from scipy.stats import nbinom
 from itertools import count
 
@@ -39,6 +39,8 @@ if args.setup==1:
 
     contacts = [(0,1,17,1),
                 (1,0,17,1),
+                (2,1,17,1),
+                (1,2,17,1),
                 (1,2,29,1),
                 (2,1,29,1)]
 
@@ -113,56 +115,49 @@ qI = Distribution([float(q)/sum(qIVec) for q in qIVec])
 ### sample with the Gibbs sampler
 
 Nsamp = 10000
-crisp = PopulationInfectionStatus( S, T, contacts, tests,qE,qI, alpha, beta, p0, p1, False)
+crisp = GibbsPIS( S, T, contacts, tests,qE,qI, alpha, beta, p0, p1, False)
 
 t = time.time()
-Z = crisp.gibbs_sample(Nsamp)
+p = crisp.get_marginals(Nsamp)
 print("generated {} Gibbs samples in {:.3}s".format(Nsamp, time.time()-t))
 print("infection stati:")
-for u,infs in enumerate(crisp.get_infection_status()):
+for u,infs in enumerate(p[:,-1]):
     print("{}: {}".format(u,infs))
 
-p = (np.cumsum(Z,axis=2)[:,np.newaxis,:,:] > np.arange(T).reshape(1,-1, 1, 1)).mean(axis=0)
-p = np.diff(p,axis=2, prepend=0)
-p = np.concatenate( [p, 1.0-p.sum(2,keepdims=True)], axis=2)
-
 figure(figsize=(6,8))
-for i in range( min(5,S)):
-    subplot( min(5,S),1,i+1)
-    plot(p[:,i],'.-')
+for i in range(min(5,S)):
+    subplot(min(5,S),1,i+1)
+    plot(p[i],'.-')
     grid(True)
 suptitle("Gibbs sampling in from scratch CRISP")
 
 
 ##########################################################################################
-### buildup CRIP many times with repeated calls to advance, thereby forward sampling
+### buildup CRISP many times with repeated calls to advance, thereby forward sampling
 ### should look like the first figure if there are no tests
 
-Z = np.zeros((Nsamp, S, 3))
+Z = np.zeros((Nsamp, S, T))
 tm = time.time()
 for i in range(Nsamp):
     ct = [c for c in contacts if c[2] == 0]
     tt = [o for o in tests if o[1] == 0]
 
-    crisp_fwd = PopulationInfectionStatus( S, 1, ct,tt, qE,qI, alpha, beta, p0, p1, True)
+    crisp_fwd = GibbsPIS( S, 1, ct,tt, qE,qI, alpha, beta, p0, p1, True)
     for t in range(1,T):
         ct = [c for c in contacts if c[2] == t]
         tt = [o for o in tests if o[1] == t]
-        crisp_fwd.advance(ct, tt, ignore_tests=False)
-    Z[i] = crisp_fwd.get_individual_traces()
+        crisp_fwd.advance(ct, tt)
+    Z[i] = crisp_fwd.sample(N=1)
 print("generated {} forward samples in {:.3}s".format(Nsamp, time.time()-tm))
 print("infection stati:")
-for u,infs in enumerate( crisp_fwd.get_infection_status()):
+for u,infs in enumerate( crisp_fwd.get_marginals(1)[:,-1]):
     print("{}: {}".format(u,infs))
-
-p = (np.cumsum(Z,axis=2)[:,np.newaxis,:,:] > np.arange(T).reshape(1,-1, 1, 1)).mean(axis=0)
-p = np.diff(p,axis=2, prepend=0)
-p = np.concatenate( [p, 1.0-p.sum(2,keepdims=True)], axis=2)
+p = (Z[:,:,:,np.newaxis] == np.arange(4).reshape(1,1,1,-1)).mean(axis=0)
 
 figure(figsize=(6,8))
-for i in range( min(5,S)):
-    subplot( min(5,S),1,i+1)
-    plot(p[:,i],'.-')
+for i in range(min(5,S)):
+    subplot(min(5,S),1,i+1)
+    plot(p[i],'.-')
     grid(True)
 suptitle("Forward sampling via iteratively building up CRISP (with patient_zero=True)")
 
@@ -172,22 +167,76 @@ suptitle("Forward sampling via iteratively building up CRISP (with patient_zero=
 ### and parentCounts are created correctly, shouls look like the first figure
 
 t = time.time()
-Z = crisp_fwd.gibbs_sample(Nsamp)
+p = crisp_fwd.get_marginals(Nsamp)
 print("generated {} Gibbs samples in {:.3}s".format(Nsamp, time.time()-t))
 print("infection stati:")
-for u,infs in enumerate( crisp_fwd.get_infection_status(Nsamp)):
+for u,infs in enumerate( p[:,-1]):
     print("{}: {}".format(u,infs))
 
-p = (np.cumsum(Z,axis=2)[:,np.newaxis,:,:] > np.arange(T).reshape(1,-1, 1, 1)).mean(axis=0)
-p = np.diff(p,axis=2, prepend=0)
-p = np.concatenate( [p, 1.0-p.sum(2,keepdims=True)], axis=2)
-
 figure(figsize=(6,8))
-for i in range( min(5,S)):
-    subplot( min(5,S),1,i+1)
-    plot(p[:,i],'.-')
+for i in range(min(5,S)):
+    subplot(min(5,S),1,i+1)
+    plot(p[i],'.-')
     grid(True)
 suptitle("Gibbs sampling in iteratively built up CRISP")
 
+
+##########################################################################################
+### inference with the LBP model
+crisp = LBPPIS(S, T, contacts, tests,qE,qI, alpha, beta, p0, p1, False)
+crisp.propagate(5,"full")
+
+t = time.time()
+p = crisp.get_marginals()
+print("LBP inference in {:.3}s".format(time.time()-t))
+print("infection stati:")
+for u,infs in enumerate(p[:,-1]):
+    print("{}: {}".format(u,infs))
+
+figure(figsize=(6,8))
+for i in range(min(5,S)):
+    subplot(min(5,S),1,i+1)
+    plot(p[i],'.-')
+    grid(True)
+suptitle("Inference with Loopy Belief Propagation")
+
+##########################################################################################
+### inference with the LBP model
+crisp.reset()
+crisp.propagate(5,"baum_welch")
+
+
+t = time.time()
+p = crisp.get_marginals()
+print("LBP inference in {:.3}s".format(time.time()-t))
+print("infection stati:")
+for u,infs in enumerate(p[:,-1]):
+    print("{}: {}".format(u,infs))
+
+figure(figsize=(6,8))
+for i in range(min(5,S)):
+    subplot(min(5,S),1,i+1)
+    plot(p[i],'.-')
+    grid(True)
+suptitle("Inference with Baum-Welch message passing (5 cycles)")
+
+##########################################################################################
+### inference with the LBP model
+crisp.reset()
+crisp.propagate(1,"forward")
+
+t = time.time()
+p = crisp.get_marginals()
+print("LBP inference in {:.3}s".format(time.time()-t))
+print("infection stati:")
+for u,infs in enumerate(p[:,-1]):
+    print("{}: {}".format(u,infs))
+
+figure(figsize=(6,8))
+for i in range(min(5,S)):
+    subplot(min(5,S),1,i+1)
+    plot(p[i],'.-')
+    grid(True)
+suptitle("Inference with forward message passing (1 cycle)")
 
 show()

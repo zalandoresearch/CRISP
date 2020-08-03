@@ -6,7 +6,8 @@ from tqdm.auto import trange
 
 sys.path.append('../..')
 
-from crisp import Distribution, GibbsPIS
+from crisp import Distribution, LBPPIS
+
 import argparse
 
 from matplotlib.pyplot import *
@@ -83,9 +84,10 @@ if __name__=="__main__":
     my_parser.add_argument('--beta', type=float, required=False, default=0.01,
                            help="The false positive rate of the I-test")
     my_parser.add_argument('--R0', type=float, required=False, default=2.5, help="The R0 factor of COVID-19")
-    my_parser.add_argument('--it', type=int, required=False, default=10, help="Numper of iterations to average over")
     my_parser.add_argument('--seed', type=int,  required=False, default=42, help="The random seed for contacts generation")
+    
     args = my_parser.parse_args()
+
 
     T = args.T
     S = args.S
@@ -94,8 +96,6 @@ if __name__=="__main__":
     p0 = args.p0
     p1 = args.p1
     R0 = args.R0
-
-    It = args.it
 
     # Initialize the random seed
     np.random.seed(args.seed)
@@ -122,43 +122,34 @@ if __name__=="__main__":
     def make_figure(contacts, t_branch=None, contacts_branch=None):
 
         P = np.zeros((T,4))
-        P_branch = np.zeros((T,4))
 
+        if t_branch is not None:
+            contacts_branch = [c for t,c in contacts.items() if t<t_branch] + \
+                             [c for t,c in contacts_branch.items() if t>=t_branch]
+            contacts_branch =  np.concatenate(contacts_branch,0)
 
-        for it in range(It):
-            pis_branch = None
-            for t in trange(T, desc="iteration {}".format(it)):
-                if t==0:
-                    pis = GibbsPIS(S, 1, contacts[t], [],
-                                                     qE, qI,
-                                                     alpha, beta,
-                                                     p0, p1, True)
-                    if t_branch is not None:
-                        pis_branch = GibbsPIS(S, 1, contacts[t] if t<t_branch else contacts_branch[t], [],
-                                                        qE, qI,
-                                                        alpha, beta,
-                                                        p0, p1, True)
-                else:
-                    pis.advance(contacts[t], [])
-                    if t_branch is not None:
-                        pis_branch.advance(contacts[t] if t<t_branch else contacts_branch[t], [])
-
-                update = pis.get_infection_status().mean(0)
-                P[t] += update
-                if t_branch is not None:
-                    update = pis_branch.get_infection_status().mean(0)
-                P_branch[t] += update
-
-        P /= It
-        P_branch /= It
+        contacts = np.concatenate(list(contacts.values()),0)
 
         fig = figure(figsize=(7.5, 4.5))
 
+        t = time.time()
+        pis = LBPPIS(S, T, contacts, [], qE, qI, alpha, beta, p0, p1, True);
+        pis.propagate(1,"forward")
+        print("pis created in {:.2f}s".format(time.time()-t))
+        P = pis.get_marginals();
+        P = P.mean(0)
         ax = fig.gca()
         ax.set_prop_cycle( cycler(color=["orange","red","blue"]))
         for i in range(1, P.shape[1]):
             ax.plot(P[:, i]*S, linestyle='-', linewidth=2)
+
         if t_branch is not None:
+            t = time.time()
+            pis = LBPPIS(S, T, contacts_branch, [], qE, qI, alpha, beta, p0, p1, True);
+            pis.propagate(1,"forward")
+            print("pis created in {:.2f}s".format(time.time()-t))
+            P_branch = pis.get_marginals();
+            P_branch = P_branch.mean(0)
             ax = fig.gca()
             ax.set_prop_cycle(cycler(color=["orange", "red", "blue"]))
             for i in range(1, P.shape[1]):
@@ -173,22 +164,29 @@ if __name__=="__main__":
         return fig
 
 
+    print("creating figure 0 ... ")
     contacts = init_contacts(S=S, T=T, R0=R0, p1=p1, seed=args.seed)
     fig_0 = make_figure(contacts)
     title('no mitigation')
-
+    print("ok")
+    
+    print("creating figure 4 ... ", end="")
     contacts_mit = init_contacts(S=S, T=T, R0=R0, p1=p1,  R0_mit=(R0-0.5,0.5), t_mit=60, H=20, seed=args.seed)
-    fig_4 = make_figure(contacts_mit, t_branch=60, contacts_branch=contacts)
+    fig_4 = make_figure(contacts_mit)#, t_branch=60, contacts_branch=contacts)
     fig_4.gca().axvline(x=60, color=[0.8, 0.8, 0.8], linestyle='--')
     title('mitigation with localized contact pattern')
+    print("ok")
 
+    print("creating figure 1 ... ", end="")
     R0_1 = np.array([R0] * 60 + [1.0] * (T - 60))
     contacts_1 = init_contacts(S=S, T=T, R0=R0_1, seed=args.seed )
     fig_1 = make_figure(contacts_1)
     fig_1.gca().set_ylim([None, S*0.06])
     fig_1.gca().axvline(x=60, color=[0.8, 0.8, 0.8], linestyle='--')
     title('mitigation after 60 days')
+    print("ok")
 
+    print("creating figure 2 ... ", end="")
     R0_2 = np.array([R0] * 60 + [0.5] * (T - 60))
     contacts_2 = init_contacts(S=S, T=T, R0=R0_2, seed=args.seed )
     fig_2 = make_figure(contacts_2)
@@ -196,7 +194,9 @@ if __name__=="__main__":
     fig_2.gca().axvline(x=60, color=[0.8, 0.8, 0.8], linestyle='--')
     fig_2.gca().set_ylim(fig_2.gca().get_ylim())
     title('suppression after 60 days')
+    print("ok")
 
+    print("creating figure 3 ... ", end="")
     R0_3 = np.array([R0] * 60 + [0.5] * 60 + [R0] * (T - 120))
     contacts_3 = init_contacts(S=S, T=T, R0=R0_3, seed=args.seed )
     fig_3 = make_figure(contacts_2, t_branch=120, contacts_branch=contacts_3)
@@ -204,10 +204,11 @@ if __name__=="__main__":
     fig_3.gca().axvline(x=120, color=[0.8, 0.8, 0.8], linestyle='--')
     fig_3.gca().set_ylim(fig_1.gca().get_ylim())
     title('release after 60 days lockdown')
+    print("ok")
 
-    fig_0.savefig('experiment51a.png')
-    fig_1.savefig('experiment51b.png')
-    fig_2.savefig('experiment51c.png')
-    fig_3.savefig('experiment51d.png')
-    fig_4.savefig('experiment51e.png')
+    fig_0.savefig('experiment51a_LBP.png')
+    fig_1.savefig('experiment51b_LBP.png')
+    fig_2.savefig('experiment51c_LBP.png')
+    fig_3.savefig('experiment51d_LBP.png')
+    fig_4.savefig('experiment51e_LBP.png')
 
