@@ -32,10 +32,10 @@ if args.setup==1:
     T = 30
     S = 3
 
-    alpha = 0.01
-    beta = 0.1
+    alpha = 0.001
+    beta = 0.01
     p0 = 0.02
-    p1 = 0.8
+    p1 = 0.99
 
     contacts = [(0,1,17,1),
                 (1,0,17,1),
@@ -118,7 +118,6 @@ Nsamp = 10000
 crisp = GibbsPIS( S, T, contacts, tests,qE,qI, alpha, beta, p0, p1, False)
 
 t = time.time()
-#Z = crisp.gibbs_sample(Nsamp)
 p = crisp.get_marginals(Nsamp)
 print("generated {} Gibbs samples in {:.3}s".format(Nsamp, time.time()-t))
 print("infection stati:")
@@ -171,7 +170,7 @@ t = time.time()
 p = crisp_fwd.get_marginals(Nsamp)
 print("generated {} Gibbs samples in {:.3}s".format(Nsamp, time.time()-t))
 print("infection stati:")
-for u,infs in enumerate( p[:,-1]):# crisp_fwd.get_infection_status(Nsamp)):
+for u,infs in enumerate( p[:,-1]):
     print("{}: {}".format(u,infs))
 
 figure(figsize=(6,8))
@@ -184,7 +183,7 @@ suptitle("Gibbs sampling in iteratively built up CRISP")
 
 ##########################################################################################
 ### inference with the LBP model
-crisp = LBPPIS( S, T, contacts, tests,qE,qI, alpha, beta, p0, p1, False)
+crisp = LBPPIS(S, T, contacts, tests,qE,qI, alpha, beta, p0, p1, False)
 crisp.propagate(5,"full")
 
 t = time.time()

@@ -36,12 +36,14 @@ def init_contacts(S, T, qIbar=20.0, R0: Union[float, np.array] = 2.5, p1=0.01, d
     l0 = l[:,np.newaxis]
     l1 = l[np.newaxis,:]
 
+    # a lower triangular binary mask of potention (unidirectional) contacts
     mask = (l[:,np.newaxis] > l[np.newaxis,:])
     idx = list(zip(*np.where(mask)))
 
+    # if H is set, we have H local cliques
     if H is not None:
-        maskb = mask * (l0 - l1 < l0 % H + 1)
-        maska = mask * (~maskb)
+        maskb = mask * (l0 - l1 < l0 % H + 1) # the mask for in-clique contatcs
+        maska = mask * (~maskb)               # the mask for inter-clique contacts
         pa = R0_mit[1] / qIbar / p1 / (S - H)
         pb = R0_mit[0] / qIbar / p1 / (H - 1)
         if pb > 1.0:
@@ -117,7 +119,7 @@ if __name__=="__main__":
     qI = Distribution([q/sum(qIVec) for q in qIVec])
 
 
-    def make_figure( contacts, t_branch=None, contacts_branch=None):
+    def make_figure(contacts, t_branch=None, contacts_branch=None):
 
         P = np.zeros((T,4))
 
@@ -195,7 +197,7 @@ if __name__=="__main__":
     print("ok")
 
     print("creating figure 3 ... ", end="")
-    R0_3 = np.array([R0] * 60 + [0.5] * 60 + [2.5] * (T - 120))
+    R0_3 = np.array([R0] * 60 + [0.5] * 60 + [R0] * (T - 120))
     contacts_3 = init_contacts(S=S, T=T, R0=R0_3, seed=args.seed )
     fig_3 = make_figure(contacts_2, t_branch=120, contacts_branch=contacts_3)
     fig_3.gca().axvline(x=60, color=[0.8, 0.8, 0.8], linestyle='--')

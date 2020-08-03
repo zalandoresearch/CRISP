@@ -1,4 +1,4 @@
-#include"seir.hpp"
+#include "seir.hpp"
 #include "node.hpp"
 
 #include <vector>
@@ -18,7 +18,7 @@ SEIRState SEIRState::next( bool change) const {
             case S: return SEIRState(E, 1);
             case E: return SEIRState(I, 1);
             case I: return SEIRState(R);
-            case R: throw std::invalid_argument( "Pahse R cannot be changed from!" );
+            case R: throw std::invalid_argument( "Phase R cannot be changed from!" );
         }
     }
     else {
