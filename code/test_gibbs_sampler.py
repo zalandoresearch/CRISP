@@ -126,15 +126,15 @@ for u,infs in enumerate(p[:,-1]):
     print("{}: {}".format(u,infs))
 
 figure(figsize=(6,8))
-for i in range( min(5,S)):
-    subplot( min(5,S),1,i+1)
+for i in range(min(5,S)):
+    subplot(min(5,S),1,i+1)
     plot(p[i],'.-')
     grid(True)
 suptitle("Gibbs sampling in from scratch CRISP")
 
 
 ##########################################################################################
-### buildup CRIP many times with repeated calls to advance, thereby forward sampling
+### buildup CRISP many times with repeated calls to advance, thereby forward sampling
 ### should look like the first figure if there are no tests
 
 Z = np.zeros((Nsamp, S, T))
@@ -156,8 +156,8 @@ for u,infs in enumerate( crisp_fwd.get_marginals(1)[:,-1]):
 p = (Z[:,:,:,np.newaxis] == np.arange(4).reshape(1,1,1,-1)).mean(axis=0)
 
 figure(figsize=(6,8))
-for i in range( min(5,S)):
-    subplot( min(5,S),1,i+1)
+for i in range(min(5,S)):
+    subplot(min(5,S),1,i+1)
     plot(p[i],'.-')
     grid(True)
 suptitle("Forward sampling via iteratively building up CRISP (with patient_zero=True)")
@@ -175,8 +175,8 @@ for u,infs in enumerate( p[:,-1]):# crisp_fwd.get_infection_status(Nsamp)):
     print("{}: {}".format(u,infs))
 
 figure(figsize=(6,8))
-for i in range( min(5,S)):
-    subplot( min(5,S),1,i+1)
+for i in range(min(5,S)):
+    subplot(min(5,S),1,i+1)
     plot(p[i],'.-')
     grid(True)
 suptitle("Gibbs sampling in iteratively built up CRISP")
@@ -195,8 +195,8 @@ for u,infs in enumerate(p[:,-1]):
     print("{}: {}".format(u,infs))
 
 figure(figsize=(6,8))
-for i in range( min(5,S)):
-    subplot( min(5,S),1,i+1)
+for i in range(min(5,S)):
+    subplot(min(5,S),1,i+1)
     plot(p[i],'.-')
     grid(True)
 suptitle("Inference with Loopy Belief Propagation")
@@ -215,8 +215,8 @@ for u,infs in enumerate(p[:,-1]):
     print("{}: {}".format(u,infs))
 
 figure(figsize=(6,8))
-for i in range( min(5,S)):
-    subplot( min(5,S),1,i+1)
+for i in range(min(5,S)):
+    subplot(min(5,S),1,i+1)
     plot(p[i],'.-')
     grid(True)
 suptitle("Inference with Baum-Welch message passing (5 cycles)")
@@ -226,7 +226,6 @@ suptitle("Inference with Baum-Welch message passing (5 cycles)")
 crisp.reset()
 crisp.propagate(1,"forward")
 
-
 t = time.time()
 p = crisp.get_marginals()
 print("LBP inference in {:.3}s".format(time.time()-t))
@@ -235,11 +234,10 @@ for u,infs in enumerate(p[:,-1]):
     print("{}: {}".format(u,infs))
 
 figure(figsize=(6,8))
-for i in range( min(5,S)):
-    subplot( min(5,S),1,i+1)
+for i in range(min(5,S)):
+    subplot(min(5,S),1,i+1)
     plot(p[i],'.-')
     grid(True)
 suptitle("Inference with forward message passing (1 cycle)")
-
 
 show()

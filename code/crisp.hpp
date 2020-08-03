@@ -1,9 +1,9 @@
-#ifndef _POPULATION_HPP
-#define _POPULATION_HPP
+#ifndef _CRISP_HPP
+#define _CRISP_HPP
 
 #include <vector>
 #include <iostream>
-# include <random>
+#include <random>
 #include <tuple>
 
 using namespace std;
@@ -93,8 +93,6 @@ protected:
         // Contacts data
         vector<vector<vector<tuple<int,int>>>> _contacts;
         vector<tuple<int,int>> _empty;
-        inline vector<tuple<int,int>>& _futureContact(int u, int t) { return t>=0 && t<_noTimeSteps ? _contacts[u][t] : _empty ; }
-        inline vector<tuple<int,int>>& _pastContact(int u, int t) { return t>=1 && t<=_noTimeSteps ? _contacts[u][t-1] : _empty ; }
 
         inline const vector<tuple<int,int>>& _futureContact(int u, int t) const { return t>=0 && t<_noTimeSteps ? _contacts[u][t] : _empty ; }
         inline const vector<tuple<int,int>>& _pastContact(int u, int t) const { return t>=1 && t<=_noTimeSteps ? _contacts[u][t-1] : _empty ; }

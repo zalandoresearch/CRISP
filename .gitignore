@@ -1,11 +1,9 @@
 .idea
 *.csv
-.vscode/settings.json
+.vscode/*
 *.pyc
 code/experiments/.ipynb_checkpoints/Gibbs sampling test-checkpoint.ipynb
 code/.DS_Store
-.vscode/launch.json
-.vscode/tasks.json
 .DS_Store
 code/infer
 code/Makefile
@@ -24,3 +22,10 @@ cmake_install.cmake
 code/experiments/**/results/[a-z,A-Z,0-9]*
 code/experiments/**/_--*
 *.part
+**/testit
+code/experiments/**/*.png
+build/*
+.ipynb_checkpoints
+
+
+
