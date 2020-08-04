@@ -19,7 +19,7 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
             _nodes[u].emplace_back( new SEIRNode(_states,_p1));
 
     for( int u=0; u<_noIndividuals; u++)
-        _factors.emplace_back(new SEIRInitFactor(*_nodes[u][0],patientZero && u==0));
+        _factors.emplace_back(new SEIRInitFactor(*_nodes[u][0],patientZero && u==0, _p0));
 
     for( int t=1; t<_noTimeSteps; t++) {
         for( int u=0; u<_noIndividuals; u++) {

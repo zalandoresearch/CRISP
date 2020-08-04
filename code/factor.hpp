@@ -70,9 +70,10 @@ public:
 class SEIRInitFactor: public Factor {
     bool _patient_zero;
     const SEIRStateSpace &_states;
+    double _p0;
 
 public:
-    SEIRInitFactor( SEIRNode &in, bool patient_zero = false);
+    SEIRInitFactor( SEIRNode &in, bool patient_zero = false, double p0 = 0);
     virtual ~SEIRInitFactor(){}
     virtual double potential( const vector<unsigned int> &);
     void message_to( Node *, MessagePtr to);
