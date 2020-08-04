@@ -280,8 +280,8 @@ double SEIRFactor::potential( const vector<unsigned int> & ) {
 }
 
 
-SEIRInitFactor::SEIRInitFactor( SEIRNode &out, bool patient_zero) :
-    Factor({&out}), _patient_zero(patient_zero), _states(out.states())
+SEIRInitFactor::SEIRInitFactor( SEIRNode &out, bool patient_zero, double p0) :
+    Factor({&out}), _patient_zero(patient_zero), _states(out.states()), _p0(p0)
 {
 }
 
@@ -295,8 +295,10 @@ void SEIRInitFactor::message_to( Node * /*n*/, MessagePtr to) {
     fill( to->begin(), to->end(), 0.0);
     if( _patient_zero)
         (*to)[_states[SEIRState(SEIRState::E,1)]] = 1.0;
-    else
-        (*to)[_states[SEIRState(SEIRState::S)]] = 1.0;
+    else {
+        (*to)[_states[SEIRState(SEIRState::S)]] = 1.0-_p0;
+        (*to)[_states[SEIRState(SEIRState::E,1)]] = _p0;
+    }
 }
 
 SEIRTestFactor::SEIRTestFactor( SEIRNode &out, bool positive, double alpha, double beta) :
