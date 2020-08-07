@@ -40,7 +40,7 @@ public:
 };
 
 
-// A class for the main infection spread propagation factor of the CRISP model (see (10) in the CRISP++ paper)
+// A class for the main infection spread propagation factor of the CRISP++ model (see (10) in the CRISP++ paper)
 class SEIRFactor : public Factor {
     const vector<double>    _piE;               // Distribution of patients being n days in E state (see (6) and (7))
     const vector<double>    _piI;               // Distribution of patients being n days in I state (see (6) and (8))
@@ -70,31 +70,42 @@ public:
 
     // Computes the message to the variable node using the belief propagation algorithm in Section 3.2 of the CRISP++ paper
     void message_to_variable(Node*, MessagePtr);
-    virtual double potential(const vector<unsigned int>&);
+    // An SEIRFactor implements its own message_to_variable() method
+    virtual double potential(const vector<unsigned int>&) { assert(false); return 0.0; }
 };
 
 
+// A class for the infection state prior factor of the CRISP++ model (f_{u,0} in Section 3.2 of the CRISP++ paper)
 class SEIRInitFactor: public Factor {
-    bool                    _patient_zero;
-    double                  _p0;
-    const SEIRStateSpace&   _states;
+    bool                    _patient_zero;          // Is this a patient who is in state E_1 with probability 1.0?
+    double                  _p0;                    // What is the exogeneous probability that infects peope a-priori
+    const SEIRStateSpace&   _states;                // Complete set of detailed SEIR states
 public:
-    SEIRInitFactor(SEIRNode &, bool = false, double = 0);
+    // Standard constructor
+    SEIRInitFactor(SEIRNode&, bool = false, double = 0);
+    // Empty destructor
     virtual ~SEIRInitFactor() {}
-    virtual double potential(const vector<unsigned int> &);
-    void message_to_variable( Node*, MessagePtr);
+
+    // Computes the prior message taking into account the person being a patient-zero
+    void message_to_variable(Node*, MessagePtr);
+    // An SEIRInitFactor implements its own message_to_variable() method
+    virtual double potential(const vector<unsigned int>&) { assert(false); return 0.0; }
 };
 
 
+// A class for the test outcome factor of the CRISP++ model (equation (19) and(12) in the CRISP++ paper)
 class SEIRTestFactor: public Factor {
-    bool                    _positive;
-    double                  _alpha;
-    double                  _beta;
-    const SEIRStateSpace&   _states;
+    bool                    _positive;          // Was this a positive test outcome?
+    double                  _alpha;             // The false-negative rate of the test
+    double                  _beta;              // The false-positive rate of the test
+    const SEIRStateSpace&   _states;            // Complete set of detailed SEIR states
 public:
-    SEIRTestFactor(SEIRNode &, bool, double, double);
+    // Standard constructor
+    SEIRTestFactor(SEIRNode&, bool, double, double);
+    // Empty destructor
     virtual ~SEIRTestFactor() {}
-    virtual double potential(const vector<unsigned int> &);
+    // The value of the factor for all detailed SEIR states
+    virtual double potential(const vector<unsigned int>&);
 };
 
 #endif

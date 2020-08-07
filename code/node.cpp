@@ -28,7 +28,6 @@ void operator/=(Message& a, const Message& b) {
 Message& normalize(Message &v) {
     double sum=0.0;
     for(auto x: v) sum += x;
-    assert(sum > 1e-10);
     for(auto& x: v) x /= sum;
     return v;
 }

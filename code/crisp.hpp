@@ -5,12 +5,9 @@
 #include <iostream>
 #include <random>
 #include <tuple>
-
-using namespace std;
-
 #include "distribution.hpp"
 
-
+using namespace std;
 
 // This enum captures the two test outcomes
 enum TestOutcome
@@ -19,7 +16,7 @@ enum TestOutcome
 };
 
 // This class stores all the outcome information
-typedef std::tuple<int,int,int> OutcomeTuple;
+typedef tuple<int,int,int> OutcomeTuple;
 class Outcome {
     private:
         int         _individual;
@@ -37,7 +34,7 @@ class Outcome {
 };
 
 // This class stores all the contact information
-typedef std::tuple<int,int,int,int> ContactTuple;
+typedef tuple<int,int,int,int> ContactTuple;
 class Contact {
     private:
         int  _fromIndividual;
@@ -57,28 +54,21 @@ class Contact {
         int getCount() const { return(_count); }
 };
 
-std::ostream &operator<<(std::ostream &os, Contact const &c);
+ostream &operator<<(ostream&, Contact const&); 
 
-
-
-
-template< typename T>
+template<typename T>
 using array1 = vector<T>;
 
-template< typename T>
+template<typename T>
 using array2 = vector<array1<T>>;
 
-template< typename T>
+template<typename T>
 using array3 = vector<array2<T>>;
 
-template< typename T>
+template<typename T>
 using array4 = vector<array3<T>>;
 
-
-
-
 class PopulationInfectionStatus {
-
 protected:
         // Total number of individuals S
         int _noIndividuals;
@@ -98,7 +88,7 @@ protected:
         inline const vector<tuple<int,int>>& _pastContact(int u, int t) const { return t>=1 && t<=_noTimeSteps ? _contacts[u][t-1] : _empty ; }
 
         // Test outcomes for all people
-        vector<vector<Outcome> >  _outcomes;
+        vector<vector<Outcome>> _outcomes;
 
         // Distribution of the length of the susceptible phase
         Geometric _qS;
@@ -115,13 +105,13 @@ protected:
         // False-Positive rate of the test outcome
         double _beta;
 
-        // cached value of p0
+        // Cached value of p0
         double _p0;
 
-        // cached value of p1
+        // Cached value of p1
         double _p1;
 
-        // cached value of log(1-_p1)
+        // Cached value of log(1-_p1)
         double _log1MinusP1;
 
         // Maximum & minimum duration of exposure and infectiousness (depends on the discrete distribution qE and qI)
@@ -130,32 +120,45 @@ protected:
         int _maxExposure;
         int _maxInfectious;
 
-    // advance the whole model by one time step, adding new contacts and tests
+    // Advance the whole model by one time step, adding new contacts and tests
     virtual void _advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes, bool updatePrior) = 0;
-
-
 public:
     PopulationInfectionStatus(int S, int T,
-                    const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes,
+                    const vector<ContactTuple>&, const vector<OutcomeTuple>&,
                     Distribution& qE, Distribution& qI,
                     double alpha, double beta, double p0, double p1,
-                    bool patientZero=false);
+                    bool=false) : 
+        _noIndividuals(S),
+        _noTimeSteps(T),
+        _gen(_rd()),
+        _contacts(_noIndividuals),
+        _outcomes(_noIndividuals),
+        _qS(p0),
+        _qE(qE),
+        _qI(qI),
+        _alpha(alpha),
+        _beta(beta),
+        _p0(p0),
+        _p1(p1),
+        _log1MinusP1(log(1.0-p1)),
+        _minExposure(qE.getMinOutcomeValue()),
+        _minInfectious(qI.getMinOutcomeValue()),
+        _maxExposure(qE.getMaxOutcomeValue()),
+        _maxInfectious(qI.getMaxOutcomeValue()) { }
 
-    PopulationInfectionStatus( const PopulationInfectionStatus& other) = delete;
+    PopulationInfectionStatus(const PopulationInfectionStatus& other) = delete;
     PopulationInfectionStatus & operator=(const PopulationInfectionStatus &) = delete;
 
-    // advance the whole model by one time step, adding new contacts and tests
+    // Advance the whole model by one time step, adding new contacts and tests
     void advance(const vector<ContactTuple>& contacts, const vector<OutcomeTuple>& outcomes) {
-            return _advance(contacts, outcomes, true);
+        return _advance(contacts, outcomes, true);
     }
 
-    // get the posterior marginal distributions P(z_{u,t}|D_{contact}, D_{test})
+    // Get the posterior marginal distributions P(z_{u,t}|D_{contact}, D_{test})
     virtual array3<double> getMarginals(int N=0, int burnIn=0, int skip=0) = 0;
 
-    // sample posterior mariginals $P_{u,t}(z_{u,t}|D_{contact}, D_{test})$
+    // Sample posterior mariginals $P_{u,t}(z_{u,t}|D_{contact}, D_{test})$
     virtual array3<int> sample( int N, int burnIn=0, int skip=0) = 0;
-
 };
-
 
 #endif

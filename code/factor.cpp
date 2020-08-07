@@ -260,7 +260,7 @@ void SEIRFactor::message_vertical(Node* n, MessagePtr to) {
         }
     }
 
-    // Finally, copy the states into the detailed output message
+    // Finally, copy the two states into the detailed output message
     MessagePtr outgoing_message = to;
     for(int i=0; i<n->size(); ++i) {
         (*outgoing_message)[i] = (_states[i].phase()==SEIRState::I ? p_I : p_N);
@@ -277,48 +277,45 @@ void SEIRFactor::message_to_variable(Node* n, MessagePtr to) {
     return message_vertical(n, to);
 }
 
-double SEIRFactor::potential(const vector<unsigned int>&) {
-    assert(false); // SEIRFactor implements its own message_to_variable() method
-    return 0.0;
-}
+// Standard constructor
+SEIRInitFactor::SEIRInitFactor(SEIRNode& out, bool patient_zero, double p0) :
+    Factor({&out}), 
+    _patient_zero(patient_zero), 
+    _p0(p0), 
+    _states(out.states()) { }
 
-
-
-SEIRInitFactor::SEIRInitFactor(SEIRNode &out, bool patient_zero, double p0) :
-    
-{
-}
-
-double SEIRInitFactor::potential( const vector<unsigned int> &/*state_its*/) {
-     assert(false); // SEIRInitFactor implements its own message_to_variable() method
-     return 0.0;
-}
-
-void SEIRInitFactor::message_to_variable( Node * /*n*/, MessagePtr to) {
-
-    fill( to->begin(), to->end(), 0.0);
-    if( _patient_zero)
+// Computes the prior message taking into account the person being a patient-zero
+void SEIRInitFactor::message_to_variable(Node*, MessagePtr to) {
+    fill(to->begin(), to->end(), 0.0);
+    if(_patient_zero) {
         (*to)[_states[SEIRState(SEIRState::E,1)]] = 1.0;
+    }
     else {
         (*to)[_states[SEIRState(SEIRState::S)]] = 1.0-_p0;
         (*to)[_states[SEIRState(SEIRState::E,1)]] = _p0;
     }
+    return;
 }
 
-SEIRTestFactor::SEIRTestFactor( SEIRNode &out, bool positive, double alpha, double beta) :
-    Factor({&out}), _states(out.states())
-{
-    _positive = positive;
-    _alpha = alpha;
-    _beta = beta;
-}
+// Standard constructor
+SEIRTestFactor::SEIRTestFactor(SEIRNode& out, bool positive, double alpha, double beta) :
+    Factor({&out}), 
+    _positive(positive),
+    _alpha(alpha),
+    _beta(beta),
+    _states(out.states()) { }
 
-double SEIRTestFactor::potential( const vector<unsigned int> &state_its) {
-
+// The value of the factor for all detailed SEIR states
+double SEIRTestFactor::potential(const vector<unsigned int>& state_its) {
     SEIRState out = _states[state_its[0]];
 
-    if( _positive)
-        return out.phase() == SEIRState::I ? 1.0-_alpha : _beta;
-    else
-        return out.phase() == SEIRState::I ? _alpha : 1.0-_beta;
+    if( _positive) {
+        return (out.phase() == SEIRState::I) ? 1.0-_alpha : _beta;
+    }
+    else {
+        return (out.phase() == SEIRState::I) ? _alpha : 1.0-_beta;
+    }
+
+    // We should never get here
+    return 0.0;
 }
