@@ -1,18 +1,16 @@
 #ifndef _LBP_HPP
 #define _LBP_HPP
 
+#include <vector>
+#include <memory>
+#include <map>
 #include "factor.hpp"
 #include "seir.hpp"
 #include "crisp.hpp"
 
-#include <vector>
-#include <memory>
-#include <map>
-
 using namespace std;
 
 namespace std {
-
   template <>
   struct hash<tuple<int,int>>
   {
@@ -67,7 +65,7 @@ public:
     virtual array3<double> getMarginals(int N=0, int burnIn=0, int skip=0);
 
     // sample posterior mariginals $P_{u,t}(z_{u,t})$
-    virtual array3<int> sample( int N, int burnIn=0, int skip=0);       
+    virtual array3<int> sample(int N, int burnIn=0, int skip=0);       
 
 
 };

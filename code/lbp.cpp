@@ -16,7 +16,7 @@ LBPPopulationInfectionStatus::LBPPopulationInfectionStatus(int S, int T,
 
     for(int u=0; u<_noIndividuals; u++)
         for( int t=0; t<_noTimeSteps; t++)
-            _nodes[u].emplace_back( new SEIRNode(_states,_p1));
+            _nodes[u].emplace_back( new SEIRNode(_states));
 
     for( int u=0; u<_noIndividuals; u++)
         _factors.emplace_back(new SEIRInitFactor(*_nodes[u][0],patientZero && u==0, _p0));
@@ -56,7 +56,7 @@ void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts
     int t = _noTimeSteps-1;
     for( int u=0; u<_noIndividuals; u++) {
         // 1. append to all nodes
-        _nodes[u].emplace_back(new SEIRNode(_states,_p1));
+        _nodes[u].emplace_back(new SEIRNode(_states));
 
         // 2. add forward and contact factors
         vector<SEIRNode *> contact_nodes;
@@ -79,13 +79,11 @@ void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts
 
     t=_noTimeSteps-1;
     for( ; t>=_noTimeSteps-5 && t>=0; t--) {
-        //cerr << "t=" << t << endl;
         for( int u=0; u<_noIndividuals; u++)
             _nodes[u][t]->update(SEIRNode::full);
     }
     t+=2;
     for( ; t<_noTimeSteps; t++) {
-        //cerr << "t=" << t << endl;
         for( int u=0; u<_noIndividuals; u++)
             _nodes[u][t]->update(SEIRNode::full);
     }
@@ -96,25 +94,20 @@ void LBPPopulationInfectionStatus::_advance(const vector<ContactTuple>& contacts
 
 void LBPPopulationInfectionStatus::_contact_helper(const vector<ContactTuple>& contacts) {
 
-    for(auto c = contacts.begin(); c != contacts.end();++c) {
+    for(auto c = contacts.begin(); c != contacts.end(); ++c) {
         Contact contact(*c);
         const int u = contact.getTargetIndividual();
         const int v = contact.getSourceIndividual();
         const int t = contact.getTime();
-        auto x = contact.getCount(); // ToDo: unignore x
 
-        _contact_map[ make_tuple(u,t)].push_back(v);
+        _contact_map[make_tuple(u,t)].push_back(v);
     }
 }
 
-
-
 void LBPPopulationInfectionStatus::propagate(int N, PropType prop_type) {
-
-    Node::message_counter = 0;
+    Node::message_update_counter = 0;
     cerr << _factors.size() << " factors, N=" << N << endl;
     auto tic = chrono::steady_clock::now();
-
 
     for( int n=0; n<N; n++) {
         for( int t=0; t<_noTimeSteps; t++) {
@@ -122,7 +115,7 @@ void LBPPopulationInfectionStatus::propagate(int N, PropType prop_type) {
                 switch( prop_type) {
                     case forward:
                     case baum_welch:
-                        _nodes[u][t]->update( SEIRNode::forward);
+                        _nodes[u][t]->update(SEIRNode::forward);
                         break;
                     case full:
                         _nodes[u][t]->update( SEIRNode::full);
@@ -132,10 +125,10 @@ void LBPPopulationInfectionStatus::propagate(int N, PropType prop_type) {
 
             cerr << n << ". " << t;
             auto toc = chrono::steady_clock::now();
-            cerr << " " << Node::message_counter << " messages in ";
+            cerr << " " << Node::message_update_counter << " message updates in";
             double d = chrono::duration_cast<chrono::nanoseconds>(toc-tic).count();
             d /= 1e9;
-            cerr << " (" << (Node::message_counter/d) << " msg/s)" << endl;
+            cerr << " (" << (Node::message_update_counter/d) << " message updates/s)" << endl;
         }
         if( prop_type==baum_welch || prop_type==full) {
             for( int t=_noTimeSteps-1; t>=0; t--) {
@@ -143,28 +136,29 @@ void LBPPopulationInfectionStatus::propagate(int N, PropType prop_type) {
                     switch( prop_type) {
                         case forward:
                         case baum_welch:
-                            _nodes[u][t]->update( SEIRNode::backward);
+                            _nodes[u][t]->update(SEIRNode::backward);
                             break;
                         case full:
-                            _nodes[u][t]->update( SEIRNode::full);
+                            _nodes[u][t]->update(SEIRNode::full);
                             break;
                     }
                 }
                 cerr << n << ". " << t;
                 auto toc = chrono::steady_clock::now();
-                cerr << " " << Node::message_counter << " messages in ";
+                cerr << " " << Node::message_update_counter << " message updates in";
                 double d = chrono::duration_cast<chrono::nanoseconds>(toc-tic).count();
                 d /= 1e9;
-                cerr << " (" << (Node::message_counter/d) << " msg/s)" << endl;
+                cerr << " (" << (Node::message_update_counter/d) << " message updates/s)" << endl;
             }
         }
     }
 }
 
 void LBPPopulationInfectionStatus::reset() {
-    for( auto &nu: _nodes)
-        for( auto &nut: nu)
+    for(auto &nu: _nodes) {
+        for(auto &nut: nu)
             nut->reset();
+    }
 }
 
 
@@ -172,7 +166,7 @@ vector<vector<double>> LBPPopulationInfectionStatus::getInfectionStatus(int /*N*
 
     vector<vector<double>> res(_noIndividuals, vector<double> (4));
     for( int u=0; u<_noIndividuals; u++) {
-        res[u] = basic_states(*_nodes[u][_noTimeSteps-1]->message_to(), _states);
+        res[u] = basic_states(*_nodes[u][_noTimeSteps-1]->normalized_message_to_factor(), _states);
         normalize(res[u]);
     }
 
@@ -185,7 +179,7 @@ array3<double> LBPPopulationInfectionStatus::getMarginals(int /*N*/, int /*burnI
     array3<double> res(_noIndividuals, array2<double>( _noTimeSteps, array1<double>( 4, 0.0)));
     for( int u=0; u<_noIndividuals; u++)
         for(int t=0; t<_noTimeSteps; t++) {
-            res[u][t] = basic_states(*_nodes[u][t]->message_to(), _states);
+            res[u][t] = basic_states(*_nodes[u][t]->normalized_message_to_factor(), _states);
             normalize(res[u][t]);
         }
 
@@ -200,7 +194,7 @@ array3<int> LBPPopulationInfectionStatus::sample( int N, int /*burnIn*/, int /*s
     for( int u=0; u<_noIndividuals; u++)
         for(int t=0; t<_noTimeSteps; t++)
             for( int n=0; n<N; n++) {
-                auto p = normalize(basic_states(*_nodes[u][t]->message_to(), _states));
+                auto p = normalize(basic_states(*_nodes[u][t]->normalized_message_to_factor(), _states));
                 double r = (double)rand() / RAND_MAX;
                 for( auto pi: p ) {
                     r -=pi;
