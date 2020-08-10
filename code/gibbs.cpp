@@ -3,14 +3,9 @@
 #include <random>
 #include <cmath>
 #include <cassert>
-
 #include "gibbs.hpp"
 
-
 using namespace std;
-
-
-
 
 InfectionTrace::InfectionTrace(const int t0, const int dE, const int dI) :
     _t0(t0),

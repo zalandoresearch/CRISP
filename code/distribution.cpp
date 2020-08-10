@@ -1,5 +1,6 @@
 #include "distribution.hpp"
 
+// Constructs the distribution with zero entries
 Distribution::Distribution() {
     _maxOutcomeValue = 0;
     _minOutcomeValue = 0;

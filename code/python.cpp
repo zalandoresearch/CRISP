@@ -7,11 +7,6 @@ namespace py = pybind11;
 #include "gibbs.hpp"
 #include "lbp.hpp"
 
-
-
-
-
-
 PYBIND11_MODULE(crisp, m) {
     py::class_<Outcome>(m, "Outcome")
         .def(py::init<const tuple<int, int, int>& > ());
