@@ -1,6 +1,7 @@
 #ifndef _FACTOR_HPP
 #define _FACTOR_HPP
 
+#include <cassert>
 #include "node.hpp"
 #include "distribution.hpp"
 
